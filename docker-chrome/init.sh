@@ -19,7 +19,7 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=/var/run/dbus/system_bus_socket"
 unset DBUS_SESSION_BUS_PID
 unset DBUS_SESSION_BUS_WINDOWID
 # open unix socket for dbus, on common setups it's done by systemd
-python -c "import socket; s = socket.socket(socket.AF_UNIX); s.bind('/var/run/dbus/system_bus_socket')"
+python3 -c "import socket; s = socket.socket(socket.AF_UNIX); s.bind('/var/run/dbus/system_bus_socket')"
 # start it
 dbus-daemon --session --nofork --nosyslog --nopidfile --address=$DBUS_STARTER_ADDRESS >> /tmp/dbus.log 2>&1 &
 returncode=$?
