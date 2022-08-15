@@ -13,6 +13,7 @@ echo -e "[startup] xvfb started with PID $XVFB_PID"
 sleep 1
 
 # make dbus visible to other processes
+mkdir -p /var/run/dbus/
 export DBUS_STARTER_BUS_TYPE="session"
 export DBUS_STARTER_ADDRESS="unix:path=/var/run/dbus/system_bus_socket"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/var/run/dbus/system_bus_socket"
