@@ -29,7 +29,7 @@ DBUS_PID=$!
 echo -e "[startup] dbus started with PID $DBUS_PID"
 sleep 1
 
-google-chrome --no-sandbox --no-first-run
+google-chrome --no-sandbox --no-first-run --disable-gpu
 
 returncode=$?
 kill $XVFB_PID
