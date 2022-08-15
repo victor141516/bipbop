@@ -28,7 +28,7 @@ DBUS_PID=$!
 echo -e "[startup] dbus started with PID $DBUS_PID"
 sleep 1
 
-google-chrome --no-sandbox --no-first-run
+su -c 'google-chrome --no-sandbox --no-first-run' - user
 
 returncode=$?
 kill $XVFB_PID

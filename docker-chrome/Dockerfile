@@ -6,8 +6,6 @@ RUN apt-get update && \
   apt-get install -y ./chrome.deb && \
   rm chrome.deb
 
-RUN mkdir -p /var/run/dbus/
 RUN useradd --create-home user 
-USER user
 COPY init.sh init.sh
 CMD [ "./init.sh" ]
