@@ -6,11 +6,11 @@ import { path } from 'ghost-cursor'
 export { MouseButton }
 
 // const lineHelper = new LineHelper()
-mouse.config.mouseSpeed = 1500
+// mouse.config.mouseSpeed = 1500
 
-function easeOutExpo(x: number): number {
-  return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
-}
+// function easeOutExpo(x: number): number {
+//   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
+// }
 
 export class Browser {
   private client: Promise<CDP.Client>
@@ -132,7 +132,7 @@ export class Browser {
       // stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
     }
 
-    return await mouse.move(stops, easeOutExpo)
+    return await mouse.move(stops) //, easeOutExpo)
   }
 
   async click(button: MouseButton = MouseButton.LEFT) {
