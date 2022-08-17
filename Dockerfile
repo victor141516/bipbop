@@ -1,4 +1,5 @@
 FROM kasmweb/chrome:develop
+ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble'
 USER root
 RUN apt-get update && \
   apt-get install -y libxtst-dev nodejs npm && \
@@ -7,7 +8,6 @@ RUN apt-get update && \
   chown -R 1000:1000 /home/kasm-user && \
   mkdir -p /pilot
 
-ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble'
 
 COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
 RUN cd /pilot && npm i
