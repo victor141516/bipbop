@@ -1,14 +1,20 @@
 FROM kasmweb/chrome:develop
-EXPOSE 16667
 USER root
 RUN apt-get update && \
-  apt-get install -y socat libxtst-dev nodejs npm && \
+  apt-get install -y libxtst-dev nodejs npm && \
   npm install -g n && \
   n 18 && \
-  chown -R 1000:1000 /home/kasm-user
+  chown -R 1000:1000 /home/kasm-user && \
+  mkdir -p /pilot
+
 ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized'
+COPY ./docker/init.sh /init.sh
+
+COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
+RUN cd /pilot && npm i
+COPY ./pilot /pilot/
+
 USER 1000
-COPY ./init.sh /init.sh
 ENTRYPOINT []
 CMD ["/init.sh"]
 

@@ -9,7 +9,7 @@ export class Browser {
   private page: Promise<CDP.Client['Page']>
   private dom: Promise<CDP.Client['DOM']>
 
-  constructor(cdpOptions?: CDP.Options | undefined) {
+  constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
       const { Runtime, Page, DOM } = client
       await Promise.all([Runtime.enable(), Page.enable()])
