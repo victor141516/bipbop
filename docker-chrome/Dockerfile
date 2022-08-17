@@ -6,7 +6,7 @@ RUN apt-get update && \
   npm install -g n && \
   n 18 && \
   chown -R 1000:1000 /home/kasm-user
-ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0'
+ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized'
 USER 1000
 COPY ./init.sh /init.sh
 ENTRYPOINT []
