@@ -6,7 +6,8 @@ import { path } from 'ghost-cursor'
 export { MouseButton }
 
 // const lineHelper = new LineHelper()
-// mouse.config.mouseSpeed = 1500
+mouse.config.mouseSpeed = 250
+keyboard.config.autoDelayMs = 50
 
 // function easeOutExpo(x: number): number {
 //   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
