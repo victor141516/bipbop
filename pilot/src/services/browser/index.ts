@@ -9,7 +9,8 @@ const lineHelper = new LineHelper()
 function easeOutBack(x: number): number {
   const c1 = 1.70158
   const c3 = c1 + 1
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
+  const increment = c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
+  return 1 + increment * 3
 }
 export class Browser {
   private client: Promise<CDP.Client>
