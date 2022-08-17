@@ -113,6 +113,8 @@ export class Browser {
     stops.push(...lineHelper.straightLine(stops.at(-1)!, randomizedLastStop))
     stops.push(straightPoints.at(-1)!)
 
+    stops.forEach((p) => console.log({ x: p.x, y: p.y }))
+
     return await mouse.move(stops, easeOutBack)
   }
 
