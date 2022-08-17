@@ -11,6 +11,7 @@ const apiV1Router = express.Router()
 apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res) => {
   const method = req.params.method
   const params = (req.body ?? []) as Parameters<Browser[typeof method]>
+  console.log({ method, params })
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
