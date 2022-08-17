@@ -4,8 +4,7 @@ USER root
 RUN apt-get update && \
   apt-get install -y socat libxtst-dev nodejs npm && \
   npm install -g n && \
-  n 18 && \
-  export PATH=/usr/local/bin:$PATH
+  n 18
 ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized'
 USER 1000
 COPY ./init.sh /init.sh
