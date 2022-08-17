@@ -23,6 +23,7 @@
     "/**/*.js"
   ],
   "dependencies": {
+    "@nut-tree/nut-js": "^2.1.1",
     "chrome-remote-interface": "^0.31.3"
   },
   "devDependencies": {

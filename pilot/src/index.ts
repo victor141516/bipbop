@@ -1,6 +1,6 @@
 import { Browser } from 'services/browser'
 
-const browser = new Browser({ host: '', port: 1 })
+const browser = new Browser({ host: '127.0.0.1', port: 16666 })
 
 ;(async () => {
   await browser.navigateTo('https://mfus.tk')
