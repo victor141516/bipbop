@@ -1,16 +1,16 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
+import { LineHelper } from '@nut-tree/nut-js/dist/lib/util/linehelper.class'
 
 export { MouseButton }
+
+const lineHelper = new LineHelper()
 
 function easeOutBack(x: number): number {
   const c1 = 1.70158
   const c3 = c1 + 1
   return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
 }
-
-const RANDOMIZE_LENGHT = 10
-
 export class Browser {
   private client: Promise<CDP.Client>
   private runtime: Promise<CDP.Client['Runtime']>
@@ -96,16 +96,24 @@ export class Browser {
   async moveCursor({ x, y, width, height }: { x: number; y: number; width: number; height: number }) {
     const destination = await (width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y))
     const straightPoints = await straightTo(destination)
-    const randomizedPoints = straightPoints.map(
-      (p) =>
-        new Point(
-          p.x + Math.random() * RANDOMIZE_LENGHT - RANDOMIZE_LENGHT / 2,
-          p.y + Math.random() * RANDOMIZE_LENGHT - RANDOMIZE_LENGHT / 2,
-        ),
-    )
-    randomizedPoints.push(straightPoints.at(-1)!)
 
-    return await mouse.move(randomizedPoints, easeOutBack)
+    const distance = (Math.abs(destination.x - straightPoints[0].x) + Math.abs(destination.y - straightPoints[0].y)) / 2
+
+    const firstStopIndex = Math.floor(straightPoints.length * 0.125)
+    const lastStopIndex = Math.floor(straightPoints.length * 0.875)
+
+    const firstStop = straightPoints[firstStopIndex]
+    const lastStop = straightPoints[lastStopIndex]
+
+    const randomizedFirstStop = new Point(firstStop.x * (distance * 0.125), firstStop.y * (distance * 0.125))
+    const randomizedLastStop = new Point(lastStop.x * (distance * 0.125), lastStop.y * (distance * 0.125))
+
+    const stops: Point[] = []
+    stops.push(...(await straightTo(randomizedFirstStop)))
+    stops.push(...lineHelper.straightLine(stops.at(-1)!, randomizedLastStop))
+    stops.push(straightPoints.at(-1)!)
+
+    return await mouse.move(stops, easeOutBack)
   }
 
   async click(button: MouseButton = MouseButton.LEFT) {
