@@ -1,8 +1,14 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
-import { url } from 'inspector'
 
 export { MouseButton }
+
+function easeOutElastic(x: number): number {
+  const c4 = (2 * Math.PI) / 3
+  return x === 0 ? 0 : x === 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1
+}
+
+const RANDOMIZE_LENGHT = 10
 
 export class Browser {
   private client: Promise<CDP.Client>
@@ -87,8 +93,18 @@ export class Browser {
   }
 
   async moveCursor({ x, y, width, height }: { x: number; y: number; width: number; height: number }) {
-    const point = width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y)
-    return await mouse.move(straightTo(point))
+    const destination = await (width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y))
+    const straightPoints = await straightTo(destination)
+    const randomizedPoints = straightPoints.map(
+      (p) =>
+        new Point(
+          p.x + Math.random() * RANDOMIZE_LENGHT - RANDOMIZE_LENGHT / 2,
+          p.y + Math.random() * RANDOMIZE_LENGHT - RANDOMIZE_LENGHT / 2,
+        ),
+    )
+    randomizedPoints.push(straightPoints.at(-1)!)
+
+    return await mouse.move(randomizedPoints, easeOutElastic)
   }
 
   async click(button: MouseButton = MouseButton.LEFT) {
