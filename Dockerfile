@@ -6,7 +6,9 @@ RUN apt-get update && \
   npm install -g n && \
   n 18 && \
   chown -R 1000:1000 /home/kasm-user && \
-  mkdir -p /pilot
+  mkdir -p /pilot && \
+  mkdir -p /etc/opt/chrome/policies/managed && \
+  echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json
 
 
 COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
