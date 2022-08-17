@@ -7,12 +7,10 @@ export { MouseButton }
 const lineHelper = new LineHelper()
 mouse.config.mouseSpeed = 3000
 
-function easeOutBack(x: number): number {
-  const c1 = 1.70158
-  const c3 = c1 + 1
-  const increment = c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
-  return 1 + increment * 3
+function easeOutExpo(x: number): number {
+  return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
 }
+
 export class Browser {
   private client: Promise<CDP.Client>
   private runtime: Promise<CDP.Client['Runtime']>
@@ -132,7 +130,7 @@ export class Browser {
       stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
     }
 
-    return await mouse.move(stops, easeOutBack)
+    return await mouse.move(stops, easeOutExpo)
   }
 
   async click(button: MouseButton = MouseButton.LEFT) {
