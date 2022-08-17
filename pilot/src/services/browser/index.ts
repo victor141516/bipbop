@@ -93,27 +93,42 @@ export class Browser {
     return pageSource.outerHTML
   }
 
-  async moveCursor({ x, y, width, height }: { x: number; y: number; width: number; height: number }) {
+  async moveCursor({
+    x,
+    y,
+    width,
+    height,
+    straight = false,
+  }: {
+    x: number
+    y: number
+    width: number
+    height: number
+    straight: boolean
+  }) {
     const destination = await (width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y))
-    const straightPoints = await straightTo(destination)
 
-    const distance = (Math.abs(destination.x - straightPoints[0].x) + Math.abs(destination.y - straightPoints[0].y)) / 2
+    let stops = await straightTo(destination)
+    if (!straight) {
+      stops = []
+      const straightPoints = stops
 
-    const firstStopIndex = Math.floor(straightPoints.length * 0.125)
-    const lastStopIndex = Math.floor(straightPoints.length * 0.875)
+      const distance =
+        (Math.abs(destination.x - straightPoints[0].x) + Math.abs(destination.y - straightPoints[0].y)) / 2
 
-    const firstStop = straightPoints[firstStopIndex]
-    const lastStop = straightPoints[lastStopIndex]
+      const firstStopIndex = Math.floor(straightPoints.length * 0.125)
+      const lastStopIndex = Math.floor(straightPoints.length * 0.875)
 
-    const randomizedFirstStop = new Point(firstStop.x + distance * 0.125, firstStop.y + distance * 0.125)
-    const randomizedLastStop = new Point(lastStop.x + distance * 0.125, lastStop.y + distance * 0.125)
+      const firstStop = straightPoints[firstStopIndex]
+      const lastStop = straightPoints[lastStopIndex]
 
-    const stops: Point[] = []
-    stops.push(...(await straightTo(randomizedFirstStop)))
-    stops.push(...lineHelper.straightLine(randomizedFirstStop, randomizedLastStop))
-    stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
+      const randomizedFirstStop = new Point(firstStop.x + distance * 0.125, firstStop.y + distance * 0.125)
+      const randomizedLastStop = new Point(lastStop.x + distance * 0.125, lastStop.y + distance * 0.125)
 
-    stops.forEach((p) => console.log({ x: p.x, y: p.y }))
+      stops.push(...(await straightTo(randomizedFirstStop)))
+      stops.push(...lineHelper.straightLine(randomizedFirstStop, randomizedLastStop))
+      stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
+    }
 
     return await mouse.move(stops, easeOutBack)
   }
