@@ -105,8 +105,8 @@ export class Browser {
     const firstStop = straightPoints[firstStopIndex]
     const lastStop = straightPoints[lastStopIndex]
 
-    const randomizedFirstStop = new Point(firstStop.x * (distance * 0.125), firstStop.y * (distance * 0.125))
-    const randomizedLastStop = new Point(lastStop.x * (distance * 0.125), lastStop.y * (distance * 0.125))
+    const randomizedFirstStop = new Point(firstStop.x + distance * 0.125, firstStop.y + distance * 0.125)
+    const randomizedLastStop = new Point(lastStop.x + distance * 0.125, lastStop.y + distance * 0.125)
 
     const stops: Point[] = []
     stops.push(...(await straightTo(randomizedFirstStop)))
