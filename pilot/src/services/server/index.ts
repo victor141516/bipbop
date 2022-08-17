@@ -7,6 +7,7 @@ const app = express()
 
 const apiRouter = express.Router()
 const apiV1Router = express.Router()
+apiV1Router.use(express.json())
 
 apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res) => {
   const method = req.params.method
