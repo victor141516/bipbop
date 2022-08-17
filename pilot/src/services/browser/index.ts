@@ -5,6 +5,7 @@ import { LineHelper } from '@nut-tree/nut-js/dist/lib/util/linehelper.class'
 export { MouseButton }
 
 const lineHelper = new LineHelper()
+mouse.config.mouseSpeed = 3000
 
 function easeOutBack(x: number): number {
   const c1 = 1.70158
