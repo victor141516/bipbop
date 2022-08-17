@@ -1,12 +1,12 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
-import { LineHelper } from '@nut-tree/nut-js/dist/lib/util/linehelper.class'
+// import { LineHelper } from '@nut-tree/nut-js/dist/lib/util/linehelper.class'
 import { path } from 'ghost-cursor'
 
 export { MouseButton }
 
-const lineHelper = new LineHelper()
-mouse.config.mouseSpeed = 3000
+// const lineHelper = new LineHelper()
+mouse.config.mouseSpeed = 1500
 
 function easeOutExpo(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
