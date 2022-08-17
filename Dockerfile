@@ -8,12 +8,12 @@ RUN apt-get update && \
   mkdir -p /pilot
 
 ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized'
-COPY ./docker/init.sh /init.sh
 
 COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
 RUN cd /pilot && npm i
 COPY ./pilot /pilot/
 
+COPY ./docker/init.sh /init.sh
 USER 1000
 ENTRYPOINT []
 CMD ["/init.sh"]
