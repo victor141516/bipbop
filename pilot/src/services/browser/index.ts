@@ -110,8 +110,8 @@ export class Browser {
 
     let stops = await straightTo(destination)
     if (!straight) {
-      stops = []
       const straightPoints = stops
+      stops = []
 
       const distance =
         (Math.abs(destination.x - straightPoints[0].x) + Math.abs(destination.y - straightPoints[0].y)) / 2
