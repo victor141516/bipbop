@@ -110,8 +110,8 @@ export class Browser {
 
     const stops: Point[] = []
     stops.push(...(await straightTo(randomizedFirstStop)))
-    stops.push(...lineHelper.straightLine(stops.at(-1)!, randomizedLastStop))
-    stops.push(straightPoints.at(-1)!)
+    stops.push(...lineHelper.straightLine(randomizedFirstStop, randomizedLastStop))
+    stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
 
     stops.forEach((p) => console.log({ x: p.x, y: p.y }))
 
