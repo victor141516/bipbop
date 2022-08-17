@@ -16,7 +16,7 @@ apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const result = browser[method](...params)
+    const result = await browser[method](...params)
     return res.json({ ok: true, result }).send()
   } catch (error) {
     return res.status(500).json({ ok: false, error }).send()
