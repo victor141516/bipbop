@@ -3,10 +3,10 @@ import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButt
 
 export { MouseButton }
 
-function easeOutElastic(x: number, ...args: unknown[]): number {
-  console.log({ x, args })
-  const c4 = (2 * Math.PI) / 3
-  return x === 0 ? 0 : x === 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1
+function easeOutBack(x: number): number {
+  const c1 = 1.70158
+  const c3 = c1 + 1
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2)
 }
 
 const RANDOMIZE_LENGHT = 10
@@ -105,7 +105,7 @@ export class Browser {
     )
     randomizedPoints.push(straightPoints.at(-1)!)
 
-    return await mouse.move(randomizedPoints, easeOutElastic)
+    return await mouse.move(randomizedPoints, easeOutBack)
   }
 
   async click(button: MouseButton = MouseButton.LEFT) {
