@@ -1,5 +1,5 @@
 import CDP from 'chrome-remote-interface'
-import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point } from '@nut-tree/nut-js'
+import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
 
 export { MouseButton }
 
@@ -81,7 +81,7 @@ export class Browser {
     return await mouse.click(button)
   }
 
-  async type(text: string) {
-    return await keyboard.type(text)
+  async type(text: string[] | Key[]) {
+    return await keyboard.type(...text)
   }
 }
