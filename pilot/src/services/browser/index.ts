@@ -3,7 +3,8 @@ import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButt
 
 export { MouseButton }
 
-function easeOutElastic(x: number): number {
+function easeOutElastic(x: number, ...args: unknown[]): number {
+  console.log({ x, args })
   const c4 = (2 * Math.PI) / 3
   return x === 0 ? 0 : x === 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1
 }
