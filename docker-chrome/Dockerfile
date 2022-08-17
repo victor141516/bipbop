@@ -4,6 +4,9 @@ USER root
 RUN apt-get update && apt-get install -y socat
 ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0'
 USER 1000
+COPY ./init.sh /init.sh
+ENTRYPOINT []
+CMD ["/init.sh"]
 
 # somehow run `socat TCP-LISTEN:16667,reuseaddr,fork TCP:127.0.0.1:16666` in the background
 # run the container with `docker run --rm -it --shm-size=512m -p 6901:6901 -p 16667:16667 -e APP_ARGS='--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0' --name chrome-bipbop -e VNC_PW=password the-image`
