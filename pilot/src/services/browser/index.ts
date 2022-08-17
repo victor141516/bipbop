@@ -1,5 +1,6 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
+import { url } from 'inspector'
 
 export { MouseButton }
 
@@ -8,6 +9,7 @@ export class Browser {
   private runtime: Promise<CDP.Client['Runtime']>
   private page: Promise<CDP.Client['Page']>
   private dom: Promise<CDP.Client['DOM']>
+  private isNavigating = false
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
@@ -19,19 +21,31 @@ export class Browser {
     this.runtime = new Promise(async (res) => res((await initResult).runtime))
     this.page = new Promise(async (res) => res((await initResult).page))
     this.dom = new Promise(async (res) => res((await initResult).dom))
+
+    this.page.then((page) => {
+      page.on('frameNavigated', () => (this.isNavigating = false))
+      page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+    })
   }
 
   async close() {
     return (await this.client).close()
   }
 
-  async navigateTo(url: string, timeout = 30000) {
+  async waitForNavigation(timeout = 30000) {
+    if (!this.isNavigating) {
+      return
+    }
     const page = await this.page
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => reject(new Error('Timeout')), timeout)
       page.on('frameNavigated', () => resolve())
-      await page.navigate({ url })
     })
+  }
+
+  async navigateTo(url: string) {
+    const page = await this.page
+    await page.navigate({ url })
   }
 
   async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
