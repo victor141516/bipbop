@@ -4,7 +4,7 @@ async function getCoords(cssSelector: string) {
   let client
   try {
     // connect to endpoint
-    client = await CDP({ port: 6666 })
+    client = await CDP({ host: '', port: 16667 })
     // extract domains
     const { Runtime } = client
     // enable events then start!
