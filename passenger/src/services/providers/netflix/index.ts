@@ -1,4 +1,4 @@
-import { click, getCoords, moveCursor, navigateTo, type, waitForNavigation } from 'services/apis/pilot'
+import { click, getCoords, moveCursor, navigateTo, type, waitForElement, waitForNavigation } from 'services/apis/pilot'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -27,6 +27,7 @@ export class Netflix {
     await waitForNavigation()
     await sleep(100)
 
+    await waitForElement('input[name=userLoginId]')
     const emailInputCoords = (await getCoords('input[name=userLoginId]'))!
     await moveCursor(emailInputCoords)
     await click()
@@ -81,10 +82,7 @@ export class Netflix {
     const profileDropdownCoords = await getCoords('div.account-dropdown-button')
     await moveCursor(profileDropdownCoords!)
 
-    for (let i = 0; i < 10; i++) {
-      if (null !== (await getCoords('a.sub-menu-link[href*=YourAccount]'))) break
-      await sleep(100)
-    }
+    await waitForElement('a.sub-menu-link[href*=YourAccount]')
 
     const accountLinkCoords = await getCoords('a.sub-menu-link[href*=YourAccount]')
     await moveCursor({ ...accountLinkCoords!, straight: true })
@@ -92,8 +90,16 @@ export class Netflix {
     await waitForNavigation()
     await sleep(100)
 
-    const cancelButtonCoords = await getCoords('button.btn.account-cancel-button')
+    await waitForElement('button.btn.account-cancel-button')
+    const alreadyUnsubscribed = null !== (await getCoords('div.account-section-item[data-uia=periodEndDate-item]'))
+    if (alreadyUnsubscribed) return
+
+    let cancelButtonCoords = await getCoords('button.btn.account-cancel-button')
     await moveCursor(cancelButtonCoords!)
+    if (null !== (await getCoords('div[data-uia=info-message-container]'))) {
+      cancelButtonCoords = await getCoords('button.btn.account-cancel-button')
+      await moveCursor(cancelButtonCoords!)
+    }
     await click()
     await waitForNavigation()
     await sleep(100)

@@ -115,6 +115,12 @@ export class Browser {
     return await mouse.move(stops) //, easeOutExpo)
   }
 
+  async moveCursorToCssSelector(cssSelector: string, straight = false) {
+    const coords = await this.getCoords(cssSelector)
+    if (!coords) throw Error(`Could not find element with css selector: ${cssSelector}`)
+    return this.moveCursor({ ...coords, straight })
+  }
+
   async click(button: MouseButton = MouseButton.LEFT) {
     return await mouse.click(button)
   }

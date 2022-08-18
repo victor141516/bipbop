@@ -59,3 +59,15 @@ export const type = async (text: string | Array<number>) => {
   const textArray = Array.isArray(text) ? text : [text]
   await pilotRequest<Array<string | number>, void>('type', [textArray])
 }
+
+export const waitForElement = async (cssSelector: string) => {
+  return await pilotRequest<string, void>('waitForElement', [cssSelector])
+}
+
+export const waitForElementToNotExist = async (cssSelector: string) => {
+  return await pilotRequest<string, void>('waitForElementToNotExist', [cssSelector])
+}
+
+export const moveCursorToCssSelector = async (cssSelector: string, straight?: boolean) => {
+  return await pilotRequest<string | boolean | undefined, void>('moveCursorToCssSelector', [cssSelector, straight])
+}
