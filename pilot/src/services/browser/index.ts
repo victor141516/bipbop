@@ -5,7 +5,6 @@ import { setInterval } from 'timers'
 
 export { MouseButton }
 
-mouse.config.mouseSpeed = 30
 keyboard.config.autoDelayMs = 50
 
 export class Browser {
@@ -112,6 +111,7 @@ export class Browser {
       )
     }
 
+    mouse.config.mouseSpeed = straight ? 1000 : 30
     return await mouse.move(stops) //, easeOutExpo)
   }
 
