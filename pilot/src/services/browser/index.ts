@@ -1,17 +1,11 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
-// import { LineHelper } from '@nut-tree/nut-js/dist/lib/util/linehelper.class'
 import { path } from 'ghost-cursor'
 
 export { MouseButton }
 
-// const lineHelper = new LineHelper()
 mouse.config.mouseSpeed = 250
 keyboard.config.autoDelayMs = 50
-
-// function easeOutExpo(x: number): number {
-//   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x)
-// }
 
 export class Browser {
   private client: Promise<CDP.Client>
@@ -115,22 +109,6 @@ export class Browser {
       stops = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
         ({ x, y }: { x: number; y: number }) => new Point(x, y),
       )
-
-      // const distance =
-      //   (Math.abs(destination.x - straightPoints[0].x) + Math.abs(destination.y - straightPoints[0].y)) / 2
-
-      // const firstStopIndex = Math.floor(straightPoints.length * 0.125)
-      // const lastStopIndex = Math.floor(straightPoints.length * 0.875)
-
-      // const firstStop = straightPoints[firstStopIndex]
-      // const lastStop = straightPoints[lastStopIndex]
-
-      // const randomizedFirstStop = new Point(firstStop.x + distance * 0.125, firstStop.y + distance * 0.125)
-      // const randomizedLastStop = new Point(lastStop.x + distance * 0.125, lastStop.y + distance * 0.125)
-
-      // stops.push(...(await straightTo(randomizedFirstStop)))
-      // stops.push(...lineHelper.straightLine(randomizedFirstStop, randomizedLastStop))
-      // stops.push(...lineHelper.straightLine(randomizedLastStop, straightPoints.at(-1)!))
     }
 
     return await mouse.move(stops) //, easeOutExpo)
@@ -144,6 +122,33 @@ export class Browser {
     return await keyboard.type(...text)
   }
 
-  // async waitForElement(cssSelector: string, timeout = 30000) {
-  // }
+  async waitForElement(cssSelector: string, timeout = 30000) {
+    return new Promise<void>(async (resolve, reject) => {
+      setTimeout(() => {
+        clearInterval(loop)
+        reject(new Error('Timeout'))
+      }, timeout)
+      const loop = setInterval(async () => {
+        if (null !== (await this.getCoords(cssSelector))) {
+          clearInterval(loop)
+          resolve()
+        }
+      }, 10)
+    })
+  }
+
+  async waitForElementToNotExist(cssSelector: string, timeout = 30000) {
+    return new Promise<void>(async (resolve, reject) => {
+      setTimeout(() => {
+        clearInterval(loop)
+        reject(new Error('Timeout'))
+      }, timeout)
+      const loop = setInterval(async () => {
+        if (null === (await this.getCoords(cssSelector))) {
+          clearInterval(loop)
+          resolve()
+        }
+      }, 10)
+    })
+  }
 }
