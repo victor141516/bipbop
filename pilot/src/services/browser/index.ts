@@ -5,7 +5,7 @@ import { setInterval } from 'timers'
 
 export { MouseButton }
 
-mouse.config.mouseSpeed = 250
+mouse.config.mouseSpeed = 10
 keyboard.config.autoDelayMs = 50
 
 export class Browser {
