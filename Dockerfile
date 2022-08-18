@@ -19,14 +19,3 @@ COPY ./docker/init.sh /init.sh
 USER 1000
 ENTRYPOINT []
 CMD ["/init.sh"]
-
-# docker run \
-#   --rm \
-#   -it \
-#   --shm-size=512m \
-#   -p 6901:6901 \
-#   -p 16667:16667 \
-#   -e APP_ARGS='--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0' \
-#   --name chrome-bipbop \
-#   -e VNC_PW=password \
-#   the-image
