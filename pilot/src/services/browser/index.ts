@@ -1,6 +1,7 @@
 import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
+import { setInterval } from 'timers'
 
 export { MouseButton }
 
@@ -106,7 +107,7 @@ export class Browser {
 
     let stops = await straightTo(destination)
     if (!straight) {
-      stops = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
+      stops = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }, 1).map(
         ({ x, y }: { x: number; y: number }) => new Point(x, y),
       )
     }
