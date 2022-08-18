@@ -98,21 +98,29 @@ export class Browser {
   }: {
     x: number
     y: number
-    width: number
-    height: number
-    straight: boolean
+    width?: number
+    height?: number
+    straight?: boolean
   }) {
     const destination = await (width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y))
 
     let stops = await straightTo(destination)
     if (!straight) {
-      stops = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
+      const step = stops.at(Math.floor(stops.length * 0.875))!
+      const noise = () => Math.random() * 150 - 75
+      const randomizedStep = { x: step.x + noise(), y: step.y + noise() }
+      const track1 = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, randomizedStep).map(
         ({ x, y }: { x: number; y: number }) => new Point(x, y),
       )
+      const track2 = path(randomizedStep, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
+        ({ x, y }: { x: number; y: number }) => new Point(x, y),
+      )
+
+      stops = [...track1, ...track2]
     }
 
     mouse.config.mouseSpeed = straight ? 1000 : 30
-    return await mouse.move(stops) //, easeOutExpo)
+    return await mouse.move(stops)
   }
 
   async moveCursorToCssSelector(cssSelector: string, straight = false) {
