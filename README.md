@@ -77,6 +77,6 @@ You can also (for now) use `passenger` to cancel your Netflix subscription:
  - `npm i`
  - `npm start`
 
-I'll probably fail because this is a project I began working on yesterday. Also you it won't work if your email or password have exotic characters like `_` (yes, underscore... \*sigh*)
+I'll probably fail because this is a project I began working on yesterday. Also it won't work if your email or password have exotic characters like `_` (yes, underscore... \*sigh*)
 
 <p align="center"><img width="200" src="https://user-images.githubusercontent.com/5548950/185271182-1275fb99-6592-47e8-a208-420ed43a9f50.png"/><img width="200" src="https://user-images.githubusercontent.com/5548950/185271182-1275fb99-6592-47e8-a208-420ed43a9f50.png"/><img width="200" src="https://user-images.githubusercontent.com/5548950/185271182-1275fb99-6592-47e8-a208-420ed43a9f50.png"/></p>
