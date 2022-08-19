@@ -169,13 +169,15 @@ export class Browser {
 
   async execJS(code: string) {
     const runtime = await this.runtime
-    return await runtime.evaluate({
-      expression: code,
-      awaitPromise: true,
-      returnByValue: true,
-      timeout: 30000,
-      allowUnsafeEvalBlockedByCSP: true,
-      userGesture: true,
-    })
+    return await runtime
+      .evaluate({
+        expression: code,
+        awaitPromise: true,
+        returnByValue: true,
+        timeout: 30000,
+        allowUnsafeEvalBlockedByCSP: true,
+        userGesture: true,
+      })
+      .then((r) => r.result.value)
   }
 }
