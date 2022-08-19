@@ -2,7 +2,7 @@ FROM kasmweb/chrome:develop
 ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble'
 USER root
 RUN apt-get update && \
-  apt-get install -y libxtst-dev nodejs npm && \
+  apt-get install -y libxtst-dev nodejs npm xorg-dev libpng-dev && \
   npm install -g n && \
   n 18 && \
   chown -R 1000:1000 /home/kasm-user && \
