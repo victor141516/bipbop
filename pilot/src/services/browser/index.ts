@@ -2,6 +2,7 @@ import CDP from 'chrome-remote-interface'
 import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
+import * as robotjs from 'robotjs'
 
 export { MouseButton }
 
@@ -135,6 +136,10 @@ export class Browser {
 
   async type(text: string[] | Key[]) {
     return await keyboard.type(...text)
+  }
+
+  async type2(text: string) {
+    return await robotjs.typeString(text)
   }
 
   async waitForElement(cssSelector: string, timeout = 30000) {
