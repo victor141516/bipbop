@@ -147,7 +147,9 @@ export class Browser {
   async type(text: string[] | Key[], useClipboard = false) {
     if (useClipboard) {
       if (typeof text[0] === 'number') throw Error('Cannot use clipboard with numeric keys')
-      await clipboard.copy(text.join(' '))
+      let clipboardText = ''
+      clipboardText = Array.isArray(text) ? text.join('') : text
+      await clipboard.copy(clipboardText)
       await keyboard.pressKey(Key.LeftControl)
       await sleep(40 + Math.random() * 60)
       await keyboard.pressKey(Key.V)
