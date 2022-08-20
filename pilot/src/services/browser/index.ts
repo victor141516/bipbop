@@ -1,8 +1,18 @@
 import CDP from 'chrome-remote-interface'
-import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
+import {
+  keyboard,
+  mouse,
+  straightTo,
+  randomPointIn,
+  Region,
+  Button as MouseButton,
+  Point,
+  Key,
+  clipboard,
+  sleep,
+} from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
-import * as robotjs from 'robotjs'
 
 export { MouseButton }
 
@@ -134,12 +144,20 @@ export class Browser {
     return await mouse.click(button)
   }
 
-  async type(text: string[] | Key[]) {
-    return await keyboard.type(...text)
-  }
-
-  async type2(text: string) {
-    return await robotjs.typeString(text)
+  async type(text: string[] | Key[], useClipboard = false) {
+    if (useClipboard) {
+      if (typeof text[0] === 'number') throw Error('Cannot use clipboard with numeric keys')
+      await clipboard.copy(text.join(' '))
+      await keyboard.pressKey(Key.LeftControl)
+      await sleep(40 + Math.random() * 60)
+      await keyboard.pressKey(Key.V)
+      await sleep(10 + Math.random() * 30)
+      await keyboard.releaseKey(Key.V)
+      await sleep(20 + Math.random() * 60)
+      await keyboard.releaseKey(Key.LeftControl)
+    } else {
+      return await keyboard.type(...text)
+    }
   }
 
   async waitForElement(cssSelector: string, timeout = 30000) {
