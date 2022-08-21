@@ -19,9 +19,9 @@ export { MouseButton }
 keyboard.config.autoDelayMs = 50
 
 export class Browser {
-  private client: Promise<CDP.Client>
+  private client: Promise<Pick<CDP.Client, 'send' | 'on' | 'close'>>
   private isNavigating = false
-  private activeTab = ''
+  private activeTab = { sessionId: '', targetId: '' }
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
@@ -29,11 +29,11 @@ export class Browser {
       await Promise.all([Runtime.enable(), Page.enable()])
       return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
     })
-    this.client = new Promise(async (res) => res((await initResult).client))
-
-    this.client.then(async (client) => {
+    this.client = new Promise(async (res) => {
+      const client = (await initResult).client
       client.Page.on('frameNavigated', () => (this.isNavigating = false))
       client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+      res(client)
     })
   }
 
@@ -53,7 +53,7 @@ export class Browser {
 
   async newTab(url = '') {
     const client = await this.client
-    const newTarget = await client.send('Target.createTarget', { url }, this.activeTab)
+    const newTarget = await client.send('Target.createTarget', { url }, this.activeTab.sessionId)
     await client.send('Target.attachToTarget', newTarget)
     return newTarget
   }
@@ -61,18 +61,23 @@ export class Browser {
   async getTabs() {
     const client = await this.client
     const allTabs = await client.send('Target.getTargets')
-    return allTabs.targetInfos
+    return allTabs.targetInfos.map(({ targetId, title, url }) => ({ targetId, title, url }))
+  }
+
+  async getActiveTab() {
+    const allTabs = await this.getTabs()
+    return allTabs.find((tab) => tab.targetId === this.activeTab.targetId)
   }
 
   async moveToTab(targetId: string) {
     const client = await this.client
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
-    this.activeTab = sessionId
+    this.activeTab = { sessionId, targetId }
   }
 
   async navigateTo(url: string) {
     const client = await this.client
-    return client.send('Page.navigate', { url }, this.activeTab)
+    return client.send('Page.navigate', { url }, this.activeTab.sessionId)
   }
 
   async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
@@ -82,7 +87,7 @@ export class Browser {
       {
         expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
       },
-      this.activeTab,
+      this.activeTab.sessionId,
     )
 
     const screenPos = await client.send(
@@ -91,7 +96,7 @@ export class Browser {
         expression:
           'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
       },
-      this.activeTab,
+      this.activeTab.sessionId,
     )
 
     const offset = JSON.parse(screenPos.result.value)
@@ -114,13 +119,13 @@ export class Browser {
 
   async getPageSource() {
     const client = await this.client
-    const rootNode = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab)
+    const rootNode = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
     const pageSource = await client.send(
       'DOM.getOuterHTML',
       {
         nodeId: rootNode.root.nodeId,
       },
-      this.activeTab,
+      this.activeTab.sessionId,
     )
     return pageSource.outerHTML
   }
@@ -230,7 +235,7 @@ export class Browser {
           allowUnsafeEvalBlockedByCSP: true,
           userGesture: true,
         },
-        this.activeTab,
+        this.activeTab.sessionId,
       )
       .then((r) => r.result.value)
   }
