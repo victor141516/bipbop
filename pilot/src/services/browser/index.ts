@@ -20,12 +20,8 @@ keyboard.config.autoDelayMs = 50
 
 export class Browser {
   private client: Promise<CDP.Client>
-  private runtime: Promise<CDP.Client['Runtime']>
-  private page: Promise<CDP.Client['Page']>
-  private dom: Promise<CDP.Client['DOM']>
-  private target: Promise<CDP.Client['Target']>
   private isNavigating = false
-  private activeTab?: string
+  private activeTab = ''
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
@@ -34,14 +30,10 @@ export class Browser {
       return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
     })
     this.client = new Promise(async (res) => res((await initResult).client))
-    this.runtime = new Promise(async (res) => res((await initResult).runtime))
-    this.page = new Promise(async (res) => res((await initResult).page))
-    this.dom = new Promise(async (res) => res((await initResult).dom))
-    this.target = new Promise(async (res) => res((await initResult).target))
 
-    this.page.then((page) => {
-      page.on('frameNavigated', () => (this.isNavigating = false))
-      page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+    this.client.then(async (client) => {
+      client.Page.on('frameNavigated', () => (this.isNavigating = false))
+      client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
     })
   }
 
@@ -50,50 +42,57 @@ export class Browser {
   }
 
   async waitForNavigation(timeout = 30000) {
-    if (!this.isNavigating) {
-      return
-    }
-    const page = await this.page
+    if (!this.isNavigating) return
+
+    const client = await this.client
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => reject(new Error('Timeout')), timeout)
-      page.on('frameNavigated', () => resolve())
+      client.on('Page.frameNavigated', () => resolve())
     })
   }
 
   async newTab(url = '') {
-    const target = await this.target
-    const newTarget = await target.createTarget({ url })
-    await target.attachToTarget(newTarget)
+    const client = await this.client
+    const newTarget = await client.send('Target.createTarget', { url }, this.activeTab)
+    await client.send('Target.attachToTarget', newTarget)
     return newTarget
   }
 
   async getTabs() {
-    const target = await this.target
-    const allTabs = await target.getTargets()
+    const client = await this.client
+    const allTabs = await client.send('Target.getTargets')
     return allTabs.targetInfos
   }
 
   async moveToTab(targetId: string) {
-    const target = await this.target
-    this.activeTab = (await target.attachToTarget({ targetId, flatten: true })).sessionId
+    const client = await this.client
+    const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
+    this.activeTab = sessionId
   }
 
   async navigateTo(url: string) {
     const client = await this.client
-    console.log({ sessionId: this.activeTab })
-    return client.send('Page.navigate', { url }, this.activeTab ?? '')
+    return client.send('Page.navigate', { url }, this.activeTab)
   }
 
   async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
-    const runtime = await this.runtime
-    const result = await runtime.evaluate({
-      expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
-    })
+    const client = await this.client
+    const result = await client.send(
+      'Runtime.evaluate',
+      {
+        expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
+      },
+      this.activeTab,
+    )
 
-    const screenPos = await runtime.evaluate({
-      expression:
-        'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
-    })
+    const screenPos = await client.send(
+      'Runtime.evaluate',
+      {
+        expression:
+          'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
+      },
+      this.activeTab,
+    )
 
     const offset = JSON.parse(screenPos.result.value)
     let clientRect: null | { x: number; y: number; width: number; height: number } = null
@@ -114,11 +113,15 @@ export class Browser {
   }
 
   async getPageSource() {
-    const dom = await this.dom
-    const rootNode = await dom.getDocument({ depth: -1 })
-    const pageSource = await dom.getOuterHTML({
-      nodeId: rootNode.root.nodeId,
-    })
+    const client = await this.client
+    const rootNode = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab)
+    const pageSource = await client.send(
+      'DOM.getOuterHTML',
+      {
+        nodeId: rootNode.root.nodeId,
+      },
+      this.activeTab,
+    )
     return pageSource.outerHTML
   }
 
@@ -215,16 +218,20 @@ export class Browser {
   }
 
   async execJS(code: string) {
-    const runtime = await this.runtime
-    return await runtime
-      .evaluate({
-        expression: code,
-        awaitPromise: true,
-        returnByValue: true,
-        timeout: 30000,
-        allowUnsafeEvalBlockedByCSP: true,
-        userGesture: true,
-      })
+    const client = await this.client
+    return await client
+      .send(
+        'Runtime.evaluate',
+        {
+          expression: code,
+          awaitPromise: true,
+          returnByValue: true,
+          timeout: 30000,
+          allowUnsafeEvalBlockedByCSP: true,
+          userGesture: true,
+        },
+        this.activeTab,
+      )
       .then((r) => r.result.value)
   }
 }
