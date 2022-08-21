@@ -14,7 +14,7 @@ apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res
   const params = (Object.keys({}).length === 0 ? [] : req.body) as Parameters<Browser[typeof method]>
   console.log('New operation:', { method, params })
   try {
-    const methodToCall = browser[method]
+    const methodToCall = browser[method]?.bind(browser)
     if (!methodToCall) return res.status(404).send({ ok: false, error: 'METHOD_NOT_FOUND' })
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
