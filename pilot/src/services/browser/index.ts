@@ -25,6 +25,7 @@ export class Browser {
   private dom: Promise<CDP.Client['DOM']>
   private target: Promise<CDP.Client['Target']>
   private isNavigating = false
+  private activeTab?: string
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
@@ -74,12 +75,12 @@ export class Browser {
 
   async moveToTab(targetId: string) {
     const target = await this.target
-    return await target.attachToTarget({ targetId })
+    this.activeTab = (await target.attachToTarget({ targetId })).sessionId
   }
 
   async navigateTo(url: string) {
-    const page = await this.page
-    await page.navigate({ url })
+    const client = await this.client
+    return new Promise((res) => client.send('Page.navigate', { url }, this.activeTab ?? '', res))
   }
 
   async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
