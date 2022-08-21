@@ -11,7 +11,7 @@ apiV1Router.use(express.json())
 
 apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res) => {
   const method = req.params.method
-  const params = (req.body ?? []) as Parameters<Browser[typeof method]>
+  const params = (Object.keys({}).length === 0 ? [] : req.body) as Parameters<Browser[typeof method]>
   console.log('New operation:', { method, params })
   try {
     const methodToCall = browser[method]
