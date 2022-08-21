@@ -75,7 +75,7 @@ export class Browser {
 
   async moveToTab(targetId: string) {
     const target = await this.target
-    this.activeTab = (await target.attachToTarget({ targetId })).sessionId
+    this.activeTab = (await target.attachToTarget({ targetId, flatten: true })).sessionId
   }
 
   async navigateTo(url: string) {
