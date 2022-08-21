@@ -80,7 +80,8 @@ export class Browser {
 
   async navigateTo(url: string) {
     const client = await this.client
-    return new Promise((res) => client.send('Page.navigate', { url }, this.activeTab ?? '', res))
+    console.log({ sessionId: this.activeTab })
+    return client.send('Page.navigate', { url }, this.activeTab ?? '')
   }
 
   async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
