@@ -61,13 +61,20 @@ export class Browser {
 
   async newTab(url = '') {
     const target = await this.target
-    return await target.createTarget({ url })
+    const newTarget = await target.createTarget({ url })
+    await target.attachToTarget(newTarget)
+    return newTarget
   }
 
   async getTabs() {
     const target = await this.target
     const allTabs = await target.getTargets()
     return allTabs.targetInfos
+  }
+
+  async moveToTab(targetId: string) {
+    const target = await this.target
+    return await target.attachToTarget({ targetId })
   }
 
   async navigateTo(url: string) {
