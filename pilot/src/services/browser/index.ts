@@ -23,18 +23,20 @@ export class Browser {
   private runtime: Promise<CDP.Client['Runtime']>
   private page: Promise<CDP.Client['Page']>
   private dom: Promise<CDP.Client['DOM']>
+  private target: Promise<CDP.Client['Target']>
   private isNavigating = false
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
-      const { Runtime, Page, DOM } = client
+      const { Runtime, Page, DOM, Target } = client
       await Promise.all([Runtime.enable(), Page.enable()])
-      return { runtime: Runtime, client, page: Page, dom: DOM }
+      return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
     })
     this.client = new Promise(async (res) => res((await initResult).client))
     this.runtime = new Promise(async (res) => res((await initResult).runtime))
     this.page = new Promise(async (res) => res((await initResult).page))
     this.dom = new Promise(async (res) => res((await initResult).dom))
+    this.target = new Promise(async (res) => res((await initResult).target))
 
     this.page.then((page) => {
       page.on('frameNavigated', () => (this.isNavigating = false))
@@ -55,6 +57,17 @@ export class Browser {
       setTimeout(() => reject(new Error('Timeout')), timeout)
       page.on('frameNavigated', () => resolve())
     })
+  }
+
+  async newTab(url = '') {
+    const target = await this.target
+    return await target.createTarget({ url })
+  }
+
+  async getTabs() {
+    const target = await this.target
+    const allTabs = await target.getTargets()
+    return allTabs.targetInfos
   }
 
   async navigateTo(url: string) {
