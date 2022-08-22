@@ -24,7 +24,10 @@ apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res
     console.error('Error on operation:', { method, params }, error)
     return res
       .status(500)
-      .json({ ok: false, error: { type: error?.constructor?.name, msg: error } })
+      .json({
+        ok: false,
+        error: { type: (error as { constructor: { name: string } })?.constructor?.name, msg: error },
+      })
       .send()
   }
 })
