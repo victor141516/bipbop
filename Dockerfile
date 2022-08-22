@@ -17,7 +17,6 @@ COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
 RUN cd /pilot && npm i
 COPY ./pilot /pilot/
 
-COPY ./docker/init.sh /init.sh
 USER 1000
 ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "--nodaemon"]
