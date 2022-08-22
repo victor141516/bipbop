@@ -13,7 +13,12 @@ import {
 } from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
-import { MissingParameterBrowserError, TimeoutBrowserError, UsingKeyboardWithKeyCodesBrowserError } from './errors'
+import {
+  MissingParameterBrowserError,
+  MouseBrowserError,
+  TimeoutBrowserError,
+  UsingKeyboardWithKeyCodesKeyboardBrowserError,
+} from './errors'
 
 export { MouseButton }
 
@@ -169,7 +174,11 @@ export class Browser {
     }
 
     mouse.config.mouseSpeed = straight ? 1000 : 30
-    return await mouse.move(stops)
+    try {
+      return await mouse.move(stops).then(() => null)
+    } catch (error) {
+      throw new MouseBrowserError((error as Error)?.message)
+    }
   }
 
   async click({ button = MouseButton.LEFT }) {
@@ -179,7 +188,7 @@ export class Browser {
   async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
     if (!text) throw new MissingParameterBrowserError('text')
     if (useClipboard) {
-      if (typeof text[0] === 'number') throw new UsingKeyboardWithKeyCodesBrowserError(text.toString())
+      if (typeof text[0] === 'number') throw new UsingKeyboardWithKeyCodesKeyboardBrowserError(text.toString())
       let clipboardText = ''
       clipboardText = Array.isArray(text) ? text.join('') : text
       await clipboard.copy(clipboardText)
