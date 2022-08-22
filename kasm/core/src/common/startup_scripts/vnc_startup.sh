@@ -94,55 +94,55 @@ function start_window_manager (){
 }
 
 function start_audio_out_websocket (){
-	if [[ ${KASM_SVC_AUDIO:-1} == 1 ]]; then
-		echo 'Starting audio websocket server'
-		$STARTUPDIR/jsmpeg/kasm_audio_out-linux kasmaudio 8081 4901 ${HOME}/.vnc/self.pem ${HOME}/.vnc/self.pem "kasm_user:$VNC_PW"  &
+	# if [[ ${KASM_SVC_AUDIO:-1} == 1 ]]; then
+	# 	echo 'Starting audio websocket server'
+	# 	$STARTUPDIR/jsmpeg/kasm_audio_out-linux kasmaudio 8081 4901 ${HOME}/.vnc/self.pem ${HOME}/.vnc/self.pem "kasm_user:$VNC_PW"  &
 
-		KASM_PROCS['kasm_audio_out_websocket']=$!
+	# 	KASM_PROCS['kasm_audio_out_websocket']=$!
 
-		if [[ $DEBUG == true ]]; then
-		  echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
-		  echo "Kasm Audio Out Websocket PID: ${KASM_PROCS['kasm_audio_out_websocket']}";
-		fi
-	fi
+	# 	if [[ $DEBUG == true ]]; then
+	# 	  echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
+	# 	  echo "Kasm Audio Out Websocket PID: ${KASM_PROCS['kasm_audio_out_websocket']}";
+	# 	fi
+	# fi
 }
 
 function start_audio_out (){
-	if [[ ${KASM_SVC_AUDIO:-1} == 1 ]]; then
-		echo 'Starting audio server'
+	# if [[ ${KASM_SVC_AUDIO:-1} == 1 ]]; then
+	# 	echo 'Starting audio server'
 
-        if [ "${START_PULSEAUDIO:-0}" == "1" ] ;
-        then
-            echo "Starting Pulse"
-            HOME=/var/run/pulse pulseaudio --start
-        fi
+  #       if [ "${START_PULSEAUDIO:-0}" == "1" ] ;
+  #       then
+  #           echo "Starting Pulse"
+  #           HOME=/var/run/pulse pulseaudio --start
+  #       fi
 
-		if [[ $DEBUG == true ]]; then
-			echo 'Starting audio service in debug mode'
-			HOME=/var/run/pulse no_proxy=127.0.0.1 ffmpeg -f pulse -fragment_size ${PULSEAUDIO_FRAGMENT_SIZE:-2000} -ar 44100 -i default -f mpegts -correct_ts_overflow 0 -codec:a mp2 -b:a 128k -ac 1 -muxdelay 0.001 http://127.0.0.1:8081/kasmaudio &
-			KASM_PROCS['kasm_audio_out']=$!
-		else
-			echo 'Starting audio service'
-			HOME=/var/run/pulse no_proxy=127.0.0.1 ffmpeg -v verbose -f pulse -fragment_size ${PULSEAUDIO_FRAGMENT_SIZE:-2000} -ar 44100 -i default -f mpegts -correct_ts_overflow 0 -codec:a mp2 -b:a 128k -ac 1 -muxdelay 0.001 http://127.0.0.1:8081/kasmaudio > /dev/null 2>&1 &
-			KASM_PROCS['kasm_audio_out']=$!
-			echo -e "\n------------------ Started Audio Out  ----------------------------"
-			echo "Kasm Audio Out PID: ${KASM_PROCS['kasm_audio_out']}";
-		fi
-	fi
+	# 	if [[ $DEBUG == true ]]; then
+	# 		echo 'Starting audio service in debug mode'
+	# 		HOME=/var/run/pulse no_proxy=127.0.0.1 ffmpeg -f pulse -fragment_size ${PULSEAUDIO_FRAGMENT_SIZE:-2000} -ar 44100 -i default -f mpegts -correct_ts_overflow 0 -codec:a mp2 -b:a 128k -ac 1 -muxdelay 0.001 http://127.0.0.1:8081/kasmaudio &
+	# 		KASM_PROCS['kasm_audio_out']=$!
+	# 	else
+	# 		echo 'Starting audio service'
+	# 		HOME=/var/run/pulse no_proxy=127.0.0.1 ffmpeg -v verbose -f pulse -fragment_size ${PULSEAUDIO_FRAGMENT_SIZE:-2000} -ar 44100 -i default -f mpegts -correct_ts_overflow 0 -codec:a mp2 -b:a 128k -ac 1 -muxdelay 0.001 http://127.0.0.1:8081/kasmaudio > /dev/null 2>&1 &
+	# 		KASM_PROCS['kasm_audio_out']=$!
+	# 		echo -e "\n------------------ Started Audio Out  ----------------------------"
+	# 		echo "Kasm Audio Out PID: ${KASM_PROCS['kasm_audio_out']}";
+	# 	fi
+	# fi
 }
 
 function start_audio_in (){
-	if [[ ${KASM_SVC_AUDIO_INPUT:-1} == 1 ]]; then
-		echo 'Starting audio input server'
-		$STARTUPDIR/audio_input/kasm_audio_input_server --ssl --auth-token "kasm_user:$VNC_PW" --cert ${HOME}/.vnc/self.pem --certkey ${HOME}/.vnc/self.pem &
+	# if [[ ${KASM_SVC_AUDIO_INPUT:-1} == 1 ]]; then
+	# 	echo 'Starting audio input server'
+	# 	$STARTUPDIR/audio_input/kasm_audio_input_server --ssl --auth-token "kasm_user:$VNC_PW" --cert ${HOME}/.vnc/self.pem --certkey ${HOME}/.vnc/self.pem &
 
-		KASM_PROCS['kasm_audio_in']=$!
+	# 	KASM_PROCS['kasm_audio_in']=$!
 
-		if [[ $DEBUG == true ]]; then
-			echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
-			echo "Kasm Audio In PID: ${KASM_PROCS['kasm_audio_in']}";
-		fi
-	fi
+	# 	if [[ $DEBUG == true ]]; then
+	# 		echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
+	# 		echo "Kasm Audio In PID: ${KASM_PROCS['kasm_audio_in']}";
+	# 	fi
+	# fi
 }
 
 function start_upload (){
