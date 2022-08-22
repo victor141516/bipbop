@@ -41,7 +41,7 @@ export class Browser {
     return (await this.client).close()
   }
 
-  async waitForNavigation(timeout = 30000) {
+  async waitForNavigation({ timeout = 30000 }) {
     if (!this.isNavigating) return
 
     const client = await this.client
@@ -51,7 +51,7 @@ export class Browser {
     })
   }
 
-  async newTab(url = '') {
+  async newTab({ url = '' }) {
     const client = await this.client
     const newTarget = await client.send('Target.createTarget', { url }, this.activeTab.sessionId)
     await client.send('Target.attachToTarget', newTarget)
@@ -69,18 +69,25 @@ export class Browser {
     return allTabs.find((tab) => tab.targetId === this.activeTab.targetId)
   }
 
-  async moveToTab(targetId: string) {
+  async moveToTab({ targetId }: { targetId?: string }) {
+    if (!targetId) throw Error('targetId is required')
     const client = await this.client
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
     this.activeTab = { sessionId, targetId }
   }
 
-  async navigateTo(url: string) {
+  async navigateTo({ url }: { url?: string }) {
+    if (!url) throw Error('url is required')
     const client = await this.client
     return client.send('Page.navigate', { url }, this.activeTab.sessionId)
   }
 
-  async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  async getCoords({
+    cssSelector,
+  }: {
+    cssSelector?: string
+  }): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    if (!cssSelector) throw Error('cssSelector is required')
     const client = await this.client
     const result = await client.send(
       'Runtime.evaluate',
@@ -164,17 +171,12 @@ export class Browser {
     return await mouse.move(stops)
   }
 
-  async moveCursorToCssSelector(cssSelector: string, straight = false) {
-    const coords = await this.getCoords(cssSelector)
-    if (!coords) throw Error(`Could not find element with css selector: ${cssSelector}`)
-    return this.moveCursor({ ...coords, straight })
-  }
-
-  async click(button: MouseButton = MouseButton.LEFT) {
+  async click({ button = MouseButton.LEFT }) {
     return await mouse.click(button)
   }
 
-  async type(text: string[] | Key[], useClipboard = false) {
+  async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
+    if (!text) throw Error('text is required')
     if (useClipboard) {
       if (typeof text[0] === 'number') throw Error('Cannot use clipboard with numeric keys')
       let clipboardText = ''
@@ -192,14 +194,15 @@ export class Browser {
     }
   }
 
-  async waitForElement(cssSelector: string, timeout = 30000) {
+  async waitForElement({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
+    if (!cssSelector) throw Error('cssSelector is required')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
         reject(new Error('Timeout'))
       }, timeout)
       const loop = setInterval(async () => {
-        if (null !== (await this.getCoords(cssSelector))) {
+        if (null !== (await this.getCoords({ cssSelector }))) {
           clearInterval(loop)
           resolve()
         }
@@ -207,14 +210,15 @@ export class Browser {
     })
   }
 
-  async waitForElementToNotExist(cssSelector: string, timeout = 30000) {
+  async waitForElementToNotExist({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
+    if (!cssSelector) throw Error('cssSelector is required')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
         reject(new Error('Timeout'))
       }, timeout)
       const loop = setInterval(async () => {
-        if (null === (await this.getCoords(cssSelector))) {
+        if (null === (await this.getCoords({ cssSelector }))) {
           clearInterval(loop)
           resolve()
         }
@@ -222,7 +226,8 @@ export class Browser {
     })
   }
 
-  async execJS(code: string) {
+  async execJS({ code }: { code?: string }) {
+    if (!code) throw Error('code is required')
     const client = await this.client
     return await client
       .send(
