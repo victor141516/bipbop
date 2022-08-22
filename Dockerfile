@@ -15,8 +15,6 @@ RUN apt-get update && \
   n 18.7.0 && \
   apt-get autoremove -y && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-COPY ./docker/supervisor/ /etc/supervisor/conf.d
-
 RUN apt-get update && \
   apt-get install -y libxtst-dev xorg-dev libpng-dev netcat && \
   chown -R 1000:1000 /home/kasm-user && \
@@ -26,6 +24,7 @@ RUN apt-get update && \
   mkdir -p /var/log/chrome && \
   apt-get autoremove -y && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
+COPY ./docker/supervisor/ /etc/supervisor/conf.d
 COPY --from=pilot-builder /pilot/ /pilot/
 COPY ./docker/init/ /init/
 
