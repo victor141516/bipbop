@@ -65,7 +65,7 @@ RUN bash $INST_SCRIPTS/fonts/install_custom_fonts.sh && rm -rf $INST_SCRIPTS/fon
 ### Install xfce UI
 COPY ./kasm/core/src/ubuntu/install/xfce $INST_SCRIPTS/xfce/
 RUN bash $INST_SCRIPTS/xfce/install_xfce_ui.sh && rm -rf $INST_SCRIPTS/xfce/
-ADD ./kasm/core/src/ubuntu/.config/ $HOME/.config/
+ADD ./kasm/core/src/ubuntu/xfce/.config/ $HOME/.config/
 RUN mkdir -p /usr/share/extra/backgrounds/
 RUN mkdir -p /usr/share/extra/icons/
 # ADD /src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
