@@ -27,7 +27,7 @@ RUN apt-get update && \
   apt-get autoremove -y && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY --from=pilot-builder /pilot/ /pilot/
-COPY ./docker/pilot-init.sh /pilot-init.sh
+COPY ./docker/init/ /init/
 
 ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "--nodaemon"]
