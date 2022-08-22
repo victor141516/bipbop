@@ -1,33 +1,45 @@
 import CDP from 'chrome-remote-interface'
-import { keyboard, mouse, straightTo, randomPointIn, Region, Button as MouseButton, Point, Key } from '@nut-tree/nut-js'
+import {
+  keyboard,
+  mouse,
+  straightTo,
+  randomPointIn,
+  Region,
+  Button as MouseButton,
+  Point,
+  Key,
+  clipboard,
+  sleep,
+} from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
+import {
+  MissingParameterBrowserError,
+  MouseBrowserError,
+  TimeoutBrowserError,
+  UsingKeyboardWithKeyCodesKeyboardBrowserError,
+} from './errors'
 
 export { MouseButton }
 
 keyboard.config.autoDelayMs = 50
 
 export class Browser {
-  private client: Promise<CDP.Client>
-  private runtime: Promise<CDP.Client['Runtime']>
-  private page: Promise<CDP.Client['Page']>
-  private dom: Promise<CDP.Client['DOM']>
+  private client: Promise<Pick<CDP.Client, 'send' | 'on' | 'close'>>
   private isNavigating = false
+  private activeTab = { sessionId: '', targetId: '' }
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
     const initResult = CDP(cdpOptions).then(async (client) => {
-      const { Runtime, Page, DOM } = client
+      const { Runtime, Page, DOM, Target } = client
       await Promise.all([Runtime.enable(), Page.enable()])
-      return { runtime: Runtime, client, page: Page, dom: DOM }
+      return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
     })
-    this.client = new Promise(async (res) => res((await initResult).client))
-    this.runtime = new Promise(async (res) => res((await initResult).runtime))
-    this.page = new Promise(async (res) => res((await initResult).page))
-    this.dom = new Promise(async (res) => res((await initResult).dom))
-
-    this.page.then((page) => {
-      page.on('frameNavigated', () => (this.isNavigating = false))
-      page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+    this.client = new Promise(async (res) => {
+      const client = (await initResult).client
+      client.Page.on('frameNavigated', () => (this.isNavigating = false))
+      client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+      res(client)
     })
   }
 
@@ -35,32 +47,70 @@ export class Browser {
     return (await this.client).close()
   }
 
-  async waitForNavigation(timeout = 30000) {
-    if (!this.isNavigating) {
-      return
-    }
-    const page = await this.page
+  async waitForNavigation({ timeout = 30000 }) {
+    if (!this.isNavigating) return
+
+    const client = await this.client
     return new Promise<void>(async (resolve, reject) => {
-      setTimeout(() => reject(new Error('Timeout')), timeout)
-      page.on('frameNavigated', () => resolve())
+      setTimeout(() => reject(new TimeoutBrowserError()), timeout)
+      client.on('Page.frameNavigated', () => resolve())
     })
   }
 
-  async navigateTo(url: string) {
-    const page = await this.page
-    await page.navigate({ url })
+  async newTab({ url = '' }) {
+    const client = await this.client
+    const newTarget = await client.send('Target.createTarget', { url }, this.activeTab.sessionId)
+    await client.send('Target.attachToTarget', newTarget)
+    return newTarget
   }
 
-  async getCoords(cssSelector: string): Promise<{ x: number; y: number; width: number; height: number } | null> {
-    const runtime = await this.runtime
-    const result = await runtime.evaluate({
-      expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
-    })
+  async getTabs() {
+    const client = await this.client
+    const allTabs = await client.send('Target.getTargets')
+    return allTabs.targetInfos.map(({ targetId, title, url }) => ({ targetId, title, url }))
+  }
 
-    const screenPos = await runtime.evaluate({
-      expression:
-        'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
-    })
+  async getActiveTab() {
+    const allTabs = await this.getTabs()
+    return allTabs.find((tab) => tab.targetId === this.activeTab.targetId)
+  }
+
+  async moveToTab({ targetId }: { targetId?: string }) {
+    if (!targetId) throw new MissingParameterBrowserError('targetId')
+    const client = await this.client
+    const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
+    this.activeTab = { sessionId, targetId }
+  }
+
+  async navigateTo({ url }: { url?: string }) {
+    if (!url) throw new MissingParameterBrowserError('url')
+    const client = await this.client
+    return client.send('Page.navigate', { url }, this.activeTab.sessionId)
+  }
+
+  async getCoords({
+    cssSelector,
+  }: {
+    cssSelector?: string
+  }): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
+    const client = await this.client
+    const result = await client.send(
+      'Runtime.evaluate',
+      {
+        expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
+      },
+      this.activeTab.sessionId,
+    )
+
+    const screenPos = await client.send(
+      'Runtime.evaluate',
+      {
+        expression:
+          'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
+      },
+      this.activeTab.sessionId,
+    )
 
     const offset = JSON.parse(screenPos.result.value)
     let clientRect: null | { x: number; y: number; width: number; height: number } = null
@@ -81,11 +131,15 @@ export class Browser {
   }
 
   async getPageSource() {
-    const dom = await this.dom
-    const rootNode = await dom.getDocument({ depth: -1 })
-    const pageSource = await dom.getOuterHTML({
-      nodeId: rootNode.root.nodeId,
-    })
+    const client = await this.client
+    const rootNode = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
+    const pageSource = await client.send(
+      'DOM.getOuterHTML',
+      {
+        nodeId: rootNode.root.nodeId,
+      },
+      this.activeTab.sessionId,
+    )
     return pageSource.outerHTML
   }
 
@@ -98,45 +152,67 @@ export class Browser {
   }: {
     x: number
     y: number
-    width: number
-    height: number
-    straight: boolean
+    width?: number
+    height?: number
+    straight?: boolean
   }) {
     const destination = await (width && height ? randomPointIn(new Region(x, y, width, height)) : new Point(x, y))
 
     let stops = await straightTo(destination)
     if (!straight) {
-      stops = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
+      const step = stops.at(Math.floor(stops.length * 0.875))!
+      const noise = () => Math.random() * 150 - 75
+      const randomizedStep = { x: step.x + noise(), y: step.y + noise() }
+      const track1 = path({ x: stops.at(0)!.x, y: stops.at(0)!.y }, randomizedStep).map(
         ({ x, y }: { x: number; y: number }) => new Point(x, y),
       )
+      const track2 = path(randomizedStep, { x: stops.at(-1)!.x, y: stops.at(-1)!.y }).map(
+        ({ x, y }: { x: number; y: number }) => new Point(x, y),
+      )
+
+      stops = [...track1, ...track2]
     }
 
     mouse.config.mouseSpeed = straight ? 1000 : 30
-    return await mouse.move(stops) //, easeOutExpo)
+    try {
+      return await mouse.move(stops).then(() => null)
+    } catch (error) {
+      throw new MouseBrowserError((error as Error)?.message)
+    }
   }
 
-  async moveCursorToCssSelector(cssSelector: string, straight = false) {
-    const coords = await this.getCoords(cssSelector)
-    if (!coords) throw Error(`Could not find element with css selector: ${cssSelector}`)
-    return this.moveCursor({ ...coords, straight })
-  }
-
-  async click(button: MouseButton = MouseButton.LEFT) {
+  async click({ button = MouseButton.LEFT }) {
     return await mouse.click(button)
   }
 
-  async type(text: string[] | Key[]) {
-    return await keyboard.type(...text)
+  async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
+    if (!text) throw new MissingParameterBrowserError('text')
+    if (useClipboard) {
+      if (typeof text[0] === 'number') throw new UsingKeyboardWithKeyCodesKeyboardBrowserError(text.toString())
+      let clipboardText = ''
+      clipboardText = Array.isArray(text) ? text.join('') : text
+      await clipboard.copy(clipboardText)
+      await keyboard.pressKey(Key.LeftControl)
+      await sleep(40 + Math.random() * 60)
+      await keyboard.pressKey(Key.V)
+      await sleep(10 + Math.random() * 30)
+      await keyboard.releaseKey(Key.V)
+      await sleep(20 + Math.random() * 60)
+      await keyboard.releaseKey(Key.LeftControl)
+    } else {
+      return await keyboard.type(...text)
+    }
   }
 
-  async waitForElement(cssSelector: string, timeout = 30000) {
+  async waitForElement({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
-        reject(new Error('Timeout'))
+        reject(new TimeoutBrowserError())
       }, timeout)
       const loop = setInterval(async () => {
-        if (null !== (await this.getCoords(cssSelector))) {
+        if (null !== (await this.getCoords({ cssSelector }))) {
           clearInterval(loop)
           resolve()
         }
@@ -144,18 +220,38 @@ export class Browser {
     })
   }
 
-  async waitForElementToNotExist(cssSelector: string, timeout = 30000) {
+  async waitForElementToNotExist({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
-        reject(new Error('Timeout'))
+        reject(new TimeoutBrowserError())
       }, timeout)
       const loop = setInterval(async () => {
-        if (null === (await this.getCoords(cssSelector))) {
+        if (null === (await this.getCoords({ cssSelector }))) {
           clearInterval(loop)
           resolve()
         }
       }, 10)
     })
+  }
+
+  async execJS({ code }: { code?: string }) {
+    if (!code) throw new MissingParameterBrowserError('code')
+    const client = await this.client
+    return await client
+      .send(
+        'Runtime.evaluate',
+        {
+          expression: code,
+          awaitPromise: true,
+          returnByValue: true,
+          timeout: 30000,
+          allowUnsafeEvalBlockedByCSP: true,
+          userGesture: true,
+        },
+        this.activeTab.sessionId,
+      )
+      .then((r) => r.result.value)
   }
 }

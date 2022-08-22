@@ -23,7 +23,7 @@
     "/**/*.js"
   ],
   "dependencies": {
-    "@nut-tree/nut-js": "^2.1.1",
+    "@nut-tree/nut-js": "^2.1.2-next.20220819121545",
     "chrome-remote-interface": "^0.31.3",
     "express": "^4.18.1",
     "ghost-cursor": "^1.1.13"

@@ -1,8 +1,20 @@
-import { click, getCoords, moveCursor, navigateTo, type, waitForElement, waitForNavigation } from 'services/apis/pilot'
+import {
+  click,
+  getCoords,
+  getPageSource,
+  moveCursor,
+  navigateTo,
+  type,
+  waitForElement,
+  waitForNavigation,
+} from 'services/apis/pilot'
+import { JSDOM } from 'jsdom'
+import { fuzzyDateParser } from 'services/utils/date'
+import { AbstractProvider } from '../abstract'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export class Netflix {
+export class Netflix implements AbstractProvider {
   email: string
   password: string
 
@@ -66,10 +78,6 @@ export class Netflix {
     }
     await waitForNavigation()
     await sleep(100)
-  }
-
-  async unsubscribe() {
-    await this.login()
 
     const firstProfileCoords = await getCoords('a.profile-link[data-uia*=primary]')
     if (firstProfileCoords) {
@@ -78,7 +86,16 @@ export class Netflix {
       await waitForNavigation()
       await sleep(100)
     }
+  }
 
+  async unsubscribe() {
+    await this.login()
+
+    await navigateTo('https://www.netflix.com')
+    await waitForNavigation()
+
+    await waitForElement('div.account-dropdown-button')
+    await sleep(100)
     const profileDropdownCoords = await getCoords('div.account-dropdown-button')
     await moveCursor(profileDropdownCoords!)
 
@@ -113,5 +130,28 @@ export class Netflix {
     await click()
     await waitForNavigation()
     await sleep(100)
+  }
+
+  async getNextBillDate() {
+    await this.login()
+    await navigateTo('https://www.netflix.com/BillingActivity')
+    await waitForNavigation()
+    await sleep(100)
+    await waitForElement('li.retableRow')
+
+    const pageSource = await getPageSource()
+    const page = new JSDOM(pageSource)
+    const dates = Array.from(
+      page.window.document.querySelectorAll('div[data-uia=billing-details-body] li.retableRow div.billDate > a'),
+    ).map((el) => el.textContent!)
+    return fuzzyDateParser(dates, dates[0])
+  }
+
+  subscribe(): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  getSubscriptionStatus(): Promise<boolean> {
+    throw new Error('Method not implemented.')
   }
 }

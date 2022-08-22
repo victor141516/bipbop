@@ -71,3 +71,8 @@ export const waitForElementToNotExist = async (cssSelector: string) => {
 export const moveCursorToCssSelector = async (cssSelector: string, straight?: boolean) => {
   return await pilotRequest<string | boolean | undefined, void>('moveCursorToCssSelector', [cssSelector, straight])
 }
+
+export const execJS = async (js: string | ((...args: unknown[]) => unknown)) => {
+  const fString = typeof js === 'function' ? `;(${js.toString()})()` : js
+  return await pilotRequest<string, void>('execJS', [fString])
+}

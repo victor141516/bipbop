@@ -1,21 +1,32 @@
-FROM kasmweb/chrome:develop
-ENV APP_ARGS '--remote-debugging-port=16666 --remote-debugging-address=0.0.0.0 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble'
+FROM node:18.7.0 as pilot-builder
+WORKDIR /pilot
+COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
+RUN npm i
+COPY ./pilot /pilot/
+
+
+FROM kasmweb/chrome:1.11.0
+ENV APP_ARGS '--remote-debugging-port=16666 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble --disable-features=Translate'
 USER root
+
 RUN apt-get update && \
-  apt-get install -y libxtst-dev nodejs npm && \
+  apt-get install -y nodejs npm && \
   npm install -g n && \
-  n 18 && \
+  n 18.7.0 && \
+  apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+RUN apt-get update && \
+  apt-get install -y libxtst-dev xorg-dev libpng-dev netcat && \
   chown -R 1000:1000 /home/kasm-user && \
   mkdir -p /pilot && \
   mkdir -p /etc/opt/chrome/policies/managed && \
-  echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json
+  echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json && \
+  mkdir -p /var/log/chrome && \
+  apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
+COPY ./docker/supervisor/ /etc/supervisor/conf.d
+COPY --from=pilot-builder /pilot/ /pilot/
+COPY ./docker/init/ /init/
 
-COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
-RUN cd /pilot && npm i
-COPY ./pilot /pilot/
-
-COPY ./docker/init.sh /init.sh
-USER 1000
 ENTRYPOINT []
-CMD ["/init.sh"]
+CMD ["/usr/bin/supervisord", "--nodaemon"]
