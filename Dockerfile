@@ -55,28 +55,21 @@ EXPOSE $VNC_PORT \
 WORKDIR $HOME
 RUN mkdir -p $HOME/Desktop
 
-# Support NVIDIA gpus for graphics acceleration
-RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
-  echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
-ENV LD_LIBRARY_PATH /usr/lib/x86_64-linux-gnu:/usr/lib/i386-linux-gnu${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
-ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics,compat32,utility
-COPY src/ubuntu/install/nvidia/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.json
-
 ### Install common tools
-COPY ./src/ubuntu/install/tools $INST_SCRIPTS/tools/
+COPY ./kasm/core/src/ubuntu/install/tools $INST_SCRIPTS/tools/
 RUN bash $INST_SCRIPTS/tools/install_tools.sh && rm -rf $INST_SCRIPTS/tools/
 
 ### Copy over the maximization script to our startup dir for use by app images.
-COPY ./src/ubuntu/install/maximize_script $STARTUPDIR/
+COPY ./kasm/core/src/ubuntu/install/maximize_script $STARTUPDIR/
 
 ### Install custom fonts
-COPY ./src/ubuntu/install/fonts $INST_SCRIPTS/fonts/
+COPY ./kasm/core/src/ubuntu/install/fonts $INST_SCRIPTS/fonts/
 RUN bash $INST_SCRIPTS/fonts/install_custom_fonts.sh && rm -rf $INST_SCRIPTS/fonts/
 
 ### Install xfce UI
-COPY ./src/ubuntu/install/xfce $INST_SCRIPTS/xfce/
+COPY ./kasm/core/src/ubuntu/install/xfce $INST_SCRIPTS/xfce/
 RUN bash $INST_SCRIPTS/xfce/install_xfce_ui.sh && rm -rf $INST_SCRIPTS/xfce/
-ADD ./src/$DISTRO/xfce/.config/ $HOME/.config/
+ADD ./kasm/core/src/$DISTRO/xfce/.config/ $HOME/.config/
 RUN mkdir -p /usr/share/extra/backgrounds/
 RUN mkdir -p /usr/share/extra/icons/
 ADD /src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
@@ -86,56 +79,25 @@ ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_def
 ADD /src/common/resources/images/icon_kasm.png /usr/share/extra/icons/icon_kasm.png
 
 ### Install kasm_vnc dependencies and binaries
-COPY ./src/ubuntu/install/kasm_vnc $INST_SCRIPTS/kasm_vnc/
+COPY ./kasm/core/src/ubuntu/install/kasm_vnc $INST_SCRIPTS/kasm_vnc/
 RUN bash $INST_SCRIPTS/kasm_vnc/install_kasm_vnc.sh && rm -rf $INST_SCRIPTS/kasm_vnc/
 
-### Install Kasm Upload Server
-COPY ./src/ubuntu/install/kasm_upload_server $INST_SCRIPTS/kasm_upload_server/
-RUN bash $INST_SCRIPTS/kasm_upload_server/install_kasm_upload_server.sh  && rm -rf $INST_SCRIPTS/kasm_upload_server/
-
-
-### Install Audio
-COPY ./src/ubuntu/install/audio $INST_SCRIPTS/audio/
-RUN bash $INST_SCRIPTS/audio/install_audio.sh  && rm -rf $INST_SCRIPTS/audio/
-
-### Install Audio Input
-COPY ./src/ubuntu/install/audio_input $INST_SCRIPTS/audio_input/
-RUN bash $INST_SCRIPTS/audio_input/install_audio_input.sh && rm -rf $INST_SCRIPTS/audio_input/
-
-### Install Gamepad Service
-COPY ./src/ubuntu/install/gamepad $INST_SCRIPTS/gamepad/
-RUN bash $INST_SCRIPTS/gamepad/install_gamepad.sh && rm -rf $INST_SCRIPTS/gamepad/
-
 ### Install custom cursors
-COPY ./src/ubuntu/install/cursors $INST_SCRIPTS/cursors/
+COPY ./kasm/core/src/ubuntu/install/cursors $INST_SCRIPTS/cursors/
 RUN bash $INST_SCRIPTS/cursors/install_cursors.sh && rm -rf $INST_SCRIPTS/cursors/
 
-### Install Squid
-COPY ./src/ubuntu/install/squid/install/ $INST_SCRIPTS/squid_install/
-RUN bash $INST_SCRIPTS/squid_install/install_squid.sh && rm -rf $INST_SCRIPTS/squid_install/
-COPY ./src/ubuntu/install/squid/resources/*.conf /etc/squid/
-COPY ./src/ubuntu/install/squid/resources/start_squid.sh /etc/squid/start_squid.sh
-COPY ./src/ubuntu/install/squid/resources/SN.png /usr/local/squid/share/icons/SN.png
-RUN chown proxy:proxy /usr/local/squid/share/icons/SN.png
-COPY ./src/ubuntu/install/squid/resources/error_message/access_denied.html /usr/local/squid/share/errors/en/ERR_ACCESS_DENIED
-RUN chown proxy:proxy /usr/local/squid/share/errors/en/ERR_ACCESS_DENIED
-RUN rm -rf $INST_SCRIPTS/resources/
-
-RUN chmod +x /etc/squid/kasm_squid_adapter
-RUN chmod +x /etc/squid/start_squid.sh && chmod 4755 /etc/squid/start_squid.sh
-
 ### configure startup
-COPY ./src/common/scripts/kasm_hook_scripts $STARTUPDIR
-ADD ./src/common/startup_scripts $STARTUPDIR
+COPY ./kasm/core/src/common/scripts/kasm_hook_scripts $STARTUPDIR
+ADD ./kasm/core/src/common/startup_scripts $STARTUPDIR
 RUN bash $STARTUPDIR/set_user_permission.sh $STARTUPDIR $HOME && \
   echo 'source $STARTUPDIR/generate_container_user' >> $HOME/.bashrc
 
 ### extra configurations needed per distro variant
-COPY ./src/ubuntu/install/extra $INST_SCRIPTS/extra/
+COPY ./kasm/core/src/ubuntu/install/extra $INST_SCRIPTS/extra/
 RUN bash $INST_SCRIPTS/extra/$EXTRA_SH  && rm -rf $INST_SCRIPTS/extra/
 
 ### VirtualGL
-COPY ./src/ubuntu/install/virtualgl $INST_SCRIPTS/virtualgl/
+COPY ./kasm/core/src/ubuntu/install/virtualgl $INST_SCRIPTS/virtualgl/
 RUN bash $INST_SCRIPTS/virtualgl/install_virtualgl.sh && rm -rf $INST_SCRIPTS/virtualgl/
 
 ### Create user and home directory for base images that don't already define it
@@ -194,7 +156,7 @@ WORKDIR $HOME
 
 
 # Install Google Chrome
-COPY ./src/ubuntu/install/chrome $INST_SCRIPTS/chrome/
+COPY ./kasm/chrome/src/ubuntu/install/chrome $INST_SCRIPTS/chrome/
 RUN bash $INST_SCRIPTS/chrome/install_chrome.sh  && rm -rf $INST_SCRIPTS/chrome/
 
 # Update the desktop environment to be optimized for a single application
@@ -205,15 +167,15 @@ RUN apt-get remove -y xfce4-panel
 # Setup the custom startup script that will be invoked when the container starts
 #ENV LAUNCH_URL  http://kasmweb.com
 
-COPY ./src/ubuntu/install/chrome/custom_startup.sh $STARTUPDIR/custom_startup.sh
+COPY ./kasm/chrome/src/ubuntu/install/chrome/custom_startup.sh $STARTUPDIR/custom_startup.sh
 RUN chmod +x $STARTUPDIR/custom_startup.sh
 
 # Install Custom Certificate Authority
-# COPY ./src/ubuntu/install/certificates $INST_SCRIPTS/certificates/
+# COPY ./kasm/chrome/src/ubuntu/install/certificates $INST_SCRIPTS/certificates/
 # RUN bash $INST_SCRIPTS/certificates/install_ca_cert.sh && rm -rf $INST_SCRIPTS/certificates/
 
 ENV KASM_RESTRICTED_FILE_CHOOSER=1
-COPY ./src/ubuntu/install/gtk/ $INST_SCRIPTS/gtk/
+COPY ./kasm/chrome/src/ubuntu/install/gtk/ $INST_SCRIPTS/gtk/
 RUN bash $INST_SCRIPTS/gtk/install_restricted_file_chooser.sh
 
 
