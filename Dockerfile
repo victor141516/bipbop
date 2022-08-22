@@ -118,7 +118,7 @@ RUN touch $STARTUPDIR/wm.log \
   && find $STARTUPDIR -type f -iname "*.rb" -exec chmod 755 {} \; \
   && find $STARTUPDIR -type f -iname "*.pl" -exec chmod 755 {} \; \
   && find $STARTUPDIR -type f -iname "*.log" -exec chmod 666 {} \; \
-  && chmod 755 $STARTUPDIR/upload_server/kasm_upload_server \
+  # && chmod 755 $STARTUPDIR/upload_server/kasm_upload_server \
   && chmod 755 $STARTUPDIR/audio_input/kasm_audio_input_server \
   && chmod 755 $STARTUPDIR/gamepad/kasm_gamepad_server \
   && chmod 755 $STARTUPDIR/generate_container_user \

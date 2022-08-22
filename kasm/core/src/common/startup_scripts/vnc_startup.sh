@@ -146,17 +146,17 @@ function start_audio_in (){
 }
 
 function start_upload (){
-	if [[ ${KASM_SVC_UPLOADS:-1} == 1 ]]; then
-		echo 'Starting upload server'
-		$STARTUPDIR/upload_server/kasm_upload_server --ssl --auth-token "kasm_user:$VNC_PW" &
+	# if [[ ${KASM_SVC_UPLOADS:-1} == 1 ]]; then
+	# 	echo 'Starting upload server'
+	# 	$STARTUPDIR/upload_server/kasm_upload_server --ssl --auth-token "kasm_user:$VNC_PW" &
 
-		KASM_PROCS['upload_server']=$!
+	# 	KASM_PROCS['upload_server']=$!
 
-		if [[ $DEBUG == true ]]; then
-			echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
-			echo "Kasm Audio In PID: ${KASM_PROCS['upload_server']}";
-		fi
-	fi
+	# 	if [[ $DEBUG == true ]]; then
+	# 		echo -e "\n------------------ Started Audio Out Websocket  ----------------------------"
+	# 		echo "Kasm Audio In PID: ${KASM_PROCS['upload_server']}";
+	# 	fi
+	# fi
 }
 
 function start_gamepad (){
