@@ -13,7 +13,7 @@ RUN apt-get update && \
   apt-get install -y nodejs npm && \
   npm install -g n && \
   n 18.7.0 && \
-  apt-get autoremove -y && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
+  apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 RUN apt-get update && \
   apt-get install -y libxtst-dev xorg-dev libpng-dev netcat && \
@@ -22,7 +22,7 @@ RUN apt-get update && \
   mkdir -p /etc/opt/chrome/policies/managed && \
   echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json && \
   mkdir -p /var/log/chrome && \
-  apt-get autoremove -y && apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
+  apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
 COPY --from=pilot-builder /pilot/ /pilot/
