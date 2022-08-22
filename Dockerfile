@@ -119,10 +119,10 @@ RUN touch $STARTUPDIR/wm.log \
   && find $STARTUPDIR -type f -iname "*.pl" -exec chmod 755 {} \; \
   && find $STARTUPDIR -type f -iname "*.log" -exec chmod 666 {} \; \
   # && chmod 755 $STARTUPDIR/upload_server/kasm_upload_server \
-  && chmod 755 $STARTUPDIR/audio_input/kasm_audio_input_server \
-  && chmod 755 $STARTUPDIR/gamepad/kasm_gamepad_server \
+  # && chmod 755 $STARTUPDIR/audio_input/kasm_audio_input_server \
+  # && chmod 755 $STARTUPDIR/gamepad/kasm_gamepad_server \
   && chmod 755 $STARTUPDIR/generate_container_user \
-  && chmod +x $STARTUPDIR/jsmpeg/kasm_audio_out-linux \
+  # && chmod +x $STARTUPDIR/jsmpeg/kasm_audio_out-linux \
   && rm -rf $STARTUPDIR/install \
   && mkdir -p $STARTUPDIR/kasmrx/Downloads \
   && chown 1000:1000 $STARTUPDIR/kasmrx/Downloads \
