@@ -7,4 +7,5 @@ for _ in `seq 1 40`; do
   nc -z localhost 16666 && echo " Open." && exit
 done; echo " Timeout!" >&2; exit 1
 
+cd /pilot
 exec npm run start
