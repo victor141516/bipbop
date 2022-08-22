@@ -18,7 +18,7 @@ apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res
     if (!methodToCall) return res.status(404).send({ ok: false, error: 'METHOD_NOT_FOUND' })
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const result = await methodToCall(params)
+    const result = (await methodToCall(params)) ?? null
     return res.json({ ok: true, result }).send()
   } catch (error) {
     console.error('Error on operation:', { method, params }, error)
