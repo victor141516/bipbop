@@ -1,19 +1,15 @@
 ########################## kasm base image
 
 ARG BASE_IMAGE="ubuntu:20.04"
-FROM $BASE_IMAGE AS install_tools
-ARG DISTRO=ubuntu
+FROM $BASE_IMAGE AS kasm-base
 
 LABEL "org.opencontainers.image.authors"='Kasm Tech "info@kasmweb.com"'
-LABEL "com.kasmweb.image"="true"
-LABEL "com.kasmweb.gpu_acceleration_egl"="nvidia"
 
 ### Environment config
 ARG START_XFCE4=0
 ARG START_PULSEAUDIO=0
 ARG BG_IMG=bg_kasm.png
 ARG EXTRA_SH=noop.sh
-ARG DISTRO=ubuntu
 ARG LANG='en_US.UTF-8'
 ARG LANGUAGE='en_US:en'
 ARG LC_ALL='en_US.UTF-8'
@@ -69,14 +65,14 @@ RUN bash $INST_SCRIPTS/fonts/install_custom_fonts.sh && rm -rf $INST_SCRIPTS/fon
 ### Install xfce UI
 COPY ./kasm/core/src/ubuntu/install/xfce $INST_SCRIPTS/xfce/
 RUN bash $INST_SCRIPTS/xfce/install_xfce_ui.sh && rm -rf $INST_SCRIPTS/xfce/
-ADD ./kasm/core/src/$DISTRO/xfce/.config/ $HOME/.config/
+ADD ./kasm/core/src/ubuntu/.config/ $HOME/.config/
 RUN mkdir -p /usr/share/extra/backgrounds/
 RUN mkdir -p /usr/share/extra/icons/
-ADD /src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
-ADD /src/common/resources/images/$BG_IMG  /usr/share/extra/backgrounds/bg_default.png
-ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_ubuntu.png
-ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_default.png
-ADD /src/common/resources/images/icon_kasm.png /usr/share/extra/icons/icon_kasm.png
+# ADD /src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
+# ADD /src/common/resources/images/$BG_IMG  /usr/share/extra/backgrounds/bg_default.png
+# ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_ubuntu.png
+# ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_default.png
+# ADD /src/common/resources/images/icon_kasm.png /usr/share/extra/icons/icon_kasm.png
 
 ### Install kasm_vnc dependencies and binaries
 COPY ./kasm/core/src/ubuntu/install/kasm_vnc $INST_SCRIPTS/kasm_vnc/
@@ -142,9 +138,7 @@ CMD ["--wait"]
 
 ########################## kasm/chrome
 
-ARG BASE_TAG="develop"
-ARG BASE_IMAGE="core-ubuntu-focal"
-FROM kasmweb/$BASE_IMAGE:$BASE_TAG
+FROM kasm-base
 USER root
 
 ENV HOME /home/kasm-default-profile
