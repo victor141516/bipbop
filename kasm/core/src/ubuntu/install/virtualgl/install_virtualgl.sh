@@ -10,7 +10,7 @@ if [ "$DISTRO" = "ubuntu" ]; then
     apt-get update && apt-get install -y --no-install-recommends \
         libglvnd0 libgl1 libglx0 libegl1 libgles2
 
-    dpkg -i $INST_SCRIPTS/virtualgl/virtualgl_*arm64.deb
+    apt-get install $INST_SCRIPTS/virtualgl/virtualgl_*arm64.deb
   else
     dpkg --add-architecture i386
     apt-get update && apt-get install -y --no-install-recommends \
@@ -28,7 +28,7 @@ if [ "$DISTRO" = "ubuntu" ]; then
 
     add-apt-repository ppa:kisak/kisak-mesa
     apt full-upgrade -y
-    dpkg -i $INST_SCRIPTS/virtualgl/virtualgl_*amd64.deb
+    apt-get install $INST_SCRIPTS/virtualgl/virtualgl_*amd64.deb
   fi
 
   apt install -f -y
