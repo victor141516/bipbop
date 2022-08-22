@@ -28,7 +28,7 @@ if [ "$DISTRO" = "ubuntu" ]; then
 
     add-apt-repository ppa:kisak/kisak-mesa
     apt full-upgrade -y
-    apt-get install $INST_SCRIPTS/virtualgl/virtualgl_*amd64.deb
+    apt-get install -y $INST_SCRIPTS/virtualgl/virtualgl_*amd64.deb
   fi
 
   apt install -f -y
