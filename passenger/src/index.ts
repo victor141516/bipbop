@@ -1,3 +1,4 @@
-import { Netflix } from 'services/providers/netflix'
+import { DisneyPlus } from 'services/providers/disneyplus'
+// import { Netflix } from 'services/providers/netflix'
 
-new Netflix({ email: 'an-email@gmail.com', password: 'and-the-password' }).unsubscribe()
+new DisneyPlus({ email: 'lalala@gmail.com', password: 'lelele' }).unsubscribe()
