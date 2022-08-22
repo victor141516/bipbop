@@ -13,6 +13,7 @@ import {
 } from '@nut-tree/nut-js'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
+import { MissingParameterBrowserError, TimeoutBrowserError, UsingKeyboardWithKeyCodesBrowserError } from './errors'
 
 export { MouseButton }
 
@@ -46,7 +47,7 @@ export class Browser {
 
     const client = await this.client
     return new Promise<void>(async (resolve, reject) => {
-      setTimeout(() => reject(new Error('Timeout')), timeout)
+      setTimeout(() => reject(new TimeoutBrowserError()), timeout)
       client.on('Page.frameNavigated', () => resolve())
     })
   }
@@ -70,14 +71,14 @@ export class Browser {
   }
 
   async moveToTab({ targetId }: { targetId?: string }) {
-    if (!targetId) throw Error('targetId is required')
+    if (!targetId) throw new MissingParameterBrowserError('targetId')
     const client = await this.client
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
     this.activeTab = { sessionId, targetId }
   }
 
   async navigateTo({ url }: { url?: string }) {
-    if (!url) throw Error('url is required')
+    if (!url) throw new MissingParameterBrowserError('url')
     const client = await this.client
     return client.send('Page.navigate', { url }, this.activeTab.sessionId)
   }
@@ -87,7 +88,7 @@ export class Browser {
   }: {
     cssSelector?: string
   }): Promise<{ x: number; y: number; width: number; height: number } | null> {
-    if (!cssSelector) throw Error('cssSelector is required')
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
     const result = await client.send(
       'Runtime.evaluate',
@@ -176,9 +177,9 @@ export class Browser {
   }
 
   async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
-    if (!text) throw Error('text is required')
+    if (!text) throw new MissingParameterBrowserError('text')
     if (useClipboard) {
-      if (typeof text[0] === 'number') throw Error('Cannot use clipboard with numeric keys')
+      if (typeof text[0] === 'number') throw new UsingKeyboardWithKeyCodesBrowserError(text.toString())
       let clipboardText = ''
       clipboardText = Array.isArray(text) ? text.join('') : text
       await clipboard.copy(clipboardText)
@@ -195,11 +196,11 @@ export class Browser {
   }
 
   async waitForElement({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
-    if (!cssSelector) throw Error('cssSelector is required')
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
-        reject(new Error('Timeout'))
+        reject(new TimeoutBrowserError())
       }, timeout)
       const loop = setInterval(async () => {
         if (null !== (await this.getCoords({ cssSelector }))) {
@@ -211,11 +212,11 @@ export class Browser {
   }
 
   async waitForElementToNotExist({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
-    if (!cssSelector) throw Error('cssSelector is required')
+    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
-        reject(new Error('Timeout'))
+        reject(new TimeoutBrowserError())
       }, timeout)
       const loop = setInterval(async () => {
         if (null === (await this.getCoords({ cssSelector }))) {
@@ -227,7 +228,7 @@ export class Browser {
   }
 
   async execJS({ code }: { code?: string }) {
-    if (!code) throw Error('code is required')
+    if (!code) throw new MissingParameterBrowserError('code')
     const client = await this.client
     return await client
       .send(
