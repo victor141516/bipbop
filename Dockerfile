@@ -10,7 +10,8 @@ ENV APP_ARGS '--remote-debugging-port=16666 --start-maximized --disable-notifica
 USER root
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
 RUN apt-get update && \
-  apt-get install -y libxtst-dev nodejs npm xorg-dev libpng-dev && \
+  apt-get install -y libxtst-dev nodejs npm xorg-dev libpng-dev netcat && \
+  apt-get autoremove -y && \
   npm install -g n && \
   n 18.7.0 && \
   chown -R 1000:1000 /home/kasm-user && \
@@ -19,6 +20,7 @@ RUN apt-get update && \
   echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json && \
   mkdir -p /var/log/chrome
 COPY --from=pilot-builder /pilot/ /pilot/
+COPY ./docker/pilot-init.sh /pilot-init.sh
 
 ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "--nodaemon"]
