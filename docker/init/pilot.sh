@@ -8,4 +8,4 @@ for _ in `seq 1 40`; do
 done; echo " Timeout!" >&2; exit 1
 
 cd /pilot
-exec npm run start
+npm run start
