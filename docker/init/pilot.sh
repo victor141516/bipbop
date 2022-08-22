@@ -4,8 +4,7 @@ echo -n "Waiting for Chrome to be ready .."
 for _ in `seq 1 40`; do 
   echo -n .
   sleep 0.25
-  nc -z localhost 16666 && echo " Open." && exit
+  nc -z localhost 16666 && echo " Open." && break
 done; echo " Timeout!" >&2; exit 1
 
-cd /pilot
-npm run start
+exec npm run start
