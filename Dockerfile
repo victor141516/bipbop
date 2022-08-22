@@ -68,11 +68,11 @@ RUN bash $INST_SCRIPTS/xfce/install_xfce_ui.sh && rm -rf $INST_SCRIPTS/xfce/
 ADD ./kasm/core/src/ubuntu/xfce/.config/ $HOME/.config/
 RUN mkdir -p /usr/share/extra/backgrounds/
 RUN mkdir -p /usr/share/extra/icons/
-# ADD /src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
-# ADD /src/common/resources/images/$BG_IMG  /usr/share/extra/backgrounds/bg_default.png
-# ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_ubuntu.png
-# ADD /src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_default.png
-# ADD /src/common/resources/images/icon_kasm.png /usr/share/extra/icons/icon_kasm.png
+ADD ./kasm/core/src/common/resources/images/bg_kasm.png  /usr/share/extra/backgrounds/bg_kasm.png
+ADD ./kasm/core/src/common/resources/images/$BG_IMG  /usr/share/extra/backgrounds/bg_default.png
+ADD ./kasm/core/src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_ubuntu.png
+ADD ./kasm/core/src/common/resources/images/icon_ubuntu.png /usr/share/extra/icons/icon_default.png
+ADD ./kasm/core/src/common/resources/images/icon_kasm.png /usr/share/extra/icons/icon_kasm.png
 
 ### Install kasm_vnc dependencies and binaries
 COPY ./kasm/core/src/ubuntu/install/kasm_vnc $INST_SCRIPTS/kasm_vnc/
@@ -155,7 +155,7 @@ RUN bash $INST_SCRIPTS/chrome/install_chrome.sh  && rm -rf $INST_SCRIPTS/chrome/
 
 # Update the desktop environment to be optimized for a single application
 RUN cp $HOME/.config/xfce4/xfconf/single-application-xfce-perchannel-xml/* $HOME/.config/xfce4/xfconf/xfce-perchannel-xml/
-# RUN cp /usr/share/extra/backgrounds/bg_kasm.png /usr/share/extra/backgrounds/bg_default.png
+RUN cp /usr/share/extra/backgrounds/bg_kasm.png /usr/share/extra/backgrounds/bg_default.png
 RUN apt-get remove -y xfce4-panel
 
 # Setup the custom startup script that will be invoked when the container starts
