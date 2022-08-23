@@ -289,4 +289,16 @@ export class Browser {
       diff = scrollPos - desiredScrollPos
     }
   }
+
+  async historyBack() {
+    await this.moveCursor({ x: 20, y: 50 })
+    await this.click({})
+    await this.waitForNavigation({})
+  }
+
+  async historyForward() {
+    await this.moveCursor({ x: 60, y: 50 })
+    await this.click({})
+    await this.waitForNavigation({})
+  }
 }
