@@ -254,4 +254,38 @@ export class Browser {
       )
       .then((r) => r.result.value)
   }
+
+  async scrollIntoView({ cssSelector }: { cssSelector: string }) {
+    let viewportHeight = 0,
+      scrollPos = 0,
+      elHeight = 0
+    const getRemoteData = async () => {
+      const result = (await this.execJS({
+        code: `(()=>{
+                  const { y: scrollPos, height: elHeight } = document.querySelector('${cssSelector}').getBoundingClientRect();
+                  const viewportHeight = document.documentElement.clientHeight
+                  return { viewportHeight, scrollPos, elHeight }
+                })()`,
+      })) as { viewportHeight: number; scrollPos: number; elHeight: number }
+      console.log(result)
+      viewportHeight = result.viewportHeight
+      scrollPos = result.scrollPos
+      elHeight = result.elHeight
+    }
+
+    await getRemoteData()
+    const desiredScrollPos = viewportHeight / 2 - elHeight / 2
+    let diff = scrollPos - desiredScrollPos
+    console.log(1, { diff })
+    const isInRange = () => Math.abs(diff) < viewportHeight * 0.25
+
+    while (!isInRange()) {
+      console.log(2, { diff })
+      await sleep(10 + 30 * Math.random())
+      if (scrollPos - desiredScrollPos < 0) await mouse.scrollDown(1)
+      else await mouse.scrollUp(1)
+      await getRemoteData()
+      diff = scrollPos - desiredScrollPos
+    }
+  }
 }
