@@ -8,4 +8,4 @@ for i in `seq 1 40`; do
   nc -z localhost 16666 && echo " Open." && break
 done;
 
-exec npm run start
+exec node index.js
