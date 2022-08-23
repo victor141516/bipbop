@@ -278,7 +278,7 @@ export class Browser {
     let diff = scrollPos - desiredScrollPos
     let lastDiff = Infinity
     console.log(1, { diff })
-    const isInRange = () => lastDiff < diff
+    const isInRange = () => Math.abs(lastDiff) < Math.abs(diff) || lastDiff === diff
 
     while (!isInRange()) {
       console.log(2, { diff })
