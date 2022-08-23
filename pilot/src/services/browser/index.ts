@@ -282,7 +282,7 @@ export class Browser {
     while (!isInRange()) {
       console.log(2, { diff })
       await sleep(10 + 30 * Math.random())
-      if (scrollPos - desiredScrollPos < 0) await mouse.scrollDown(1)
+      if (diff > 0) await mouse.scrollDown(1)
       else await mouse.scrollUp(1)
       await getRemoteData()
       diff = scrollPos - desiredScrollPos
