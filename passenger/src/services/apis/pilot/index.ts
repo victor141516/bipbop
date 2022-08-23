@@ -86,3 +86,7 @@ export const moveCursorToElementAndClick = async ({
   await moveCursor({ ...coords!, straight })
   await click()
 }
+
+export const isElementPresent = async ({ cssSelector }: { cssSelector: string }) => {
+  return null !== (await getCoords({ cssSelector }))
+}

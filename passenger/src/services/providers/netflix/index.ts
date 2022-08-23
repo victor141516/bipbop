@@ -22,7 +22,7 @@ export class Netflix implements AbstractProvider {
     this.password = password
   }
 
-  private async login() {
+  async login() {
     await navigateTo('https://www.netflix.com')
     await waitForNavigation()
     await sleep(100)
@@ -88,8 +88,6 @@ export class Netflix implements AbstractProvider {
   }
 
   async unsubscribe() {
-    await this.login()
-
     await navigateTo('https://www.netflix.com')
     await waitForNavigation()
 

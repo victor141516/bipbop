@@ -1,6 +1,8 @@
 import {
+  click,
   execJS,
   getCoords,
+  isElementPresent,
   moveCursor,
   moveCursorToElementAndClick,
   navigateTo,
@@ -9,8 +11,8 @@ import {
   waitForNavigation,
 } from 'services/apis/pilot'
 import { AbstractProvider } from '../abstract'
-import { sleep } from 'services/utils/misc'
 import { DateTime } from 'luxon'
+import { sleep } from 'services/utils/misc'
 
 const SELECTORS = {
   LOGIN_BUTTON: 'header > nav.pre-sticky > a[href*=login]',
@@ -33,37 +35,37 @@ export class DisneyPlus implements AbstractProvider {
     this.password = password
   }
 
-  private async login() {
-    console.log(1)
+  async login() {
     await navigateTo('https://www.disneyplus.com/')
-    console.log(2)
     await waitForNavigation()
-    console.log(3)
     await sleep(100)
-    console.log(4)
+    const isLogged = await Promise.any([
+      waitForElement({ cssSelector: SELECTORS.LOGIN_BUTTON }).then(() => false),
+      waitForElement({ cssSelector: SELECTORS.ANY_ELEMENT_PRESENT_WHILE_LOGGED_IN }).then(() => true),
+    ])
+    if (isLogged) return
+
+    if (await isElementPresent({ cssSelector: SELECTORS.ACCEPT_COOKIES })) {
+      await moveCursorToElementAndClick({ cssSelector: SELECTORS.ACCEPT_COOKIES })
+    }
+
     await moveCursorToElementAndClick({ cssSelector: SELECTORS.LOGIN_BUTTON })
-    await sleep(1000)
-    console.log(5)
+    await sleep(100)
     await waitForNavigation()
-    await sleep(1000)
-    console.log(6)
-    // await sleep(10000)
-    await waitForElement({ cssSelector: SELECTORS.LOGIN_EMAIL_INPUT })
-    // await moveCursorToElementAndClick(SELECTORS.LOGIN_EMAIL_INPUT)
-    console.log(7)
-    await type({ text: this.email })
-    console.log(8)
+    await sleep(100)
+    while (true) {
+      await waitForElement({ cssSelector: SELECTORS.LOGIN_EMAIL_INPUT })
+      await sleep(500 + Math.random() * 2000)
+      await type({ text: this.email })
+      const inputValue = await execJS({ code: `document.querySelector('${SELECTORS.LOGIN_EMAIL_INPUT}')?.value` })
+      if (typeof inputValue === 'string' && inputValue !== '') break
+    }
     await moveCursorToElementAndClick({ cssSelector: SELECTORS.LOGIN_EMAIL_CONTINUE_BUTTON })
-    console.log(9)
     await waitForElement({ cssSelector: SELECTORS.LOGIN_PASSWORD_INPUT })
-    // await moveCursorToElementAndClick(SELECTORS.LOGIN_PASSWORD_INPUT)
-    console.log(10)
+    await sleep(500 + Math.random() * 2000)
     await type({ text: this.password })
-    console.log(11)
     await moveCursorToElementAndClick({ cssSelector: SELECTORS.LOGIN_PASSWORD_CONTINUE_BUTTON })
-    console.log(12)
     await waitForNavigation()
-    console.log(13)
     await waitForElement({ cssSelector: SELECTORS.ANY_ELEMENT_PRESENT_WHILE_LOGGED_IN })
   }
 
@@ -72,15 +74,22 @@ export class DisneyPlus implements AbstractProvider {
   }
 
   async unsubscribe(): Promise<void> {
-    await this.login()
+    await navigateTo('https://www.disneyplus.com/')
+    await waitForNavigation()
+    await sleep(100)
 
-    await moveCursorToElementAndClick({ cssSelector: SELECTORS.ACCEPT_COOKIES })
+    if (await isElementPresent({ cssSelector: SELECTORS.ACCEPT_COOKIES })) {
+      await moveCursorToElementAndClick({ cssSelector: SELECTORS.ACCEPT_COOKIES })
+    }
 
     await waitForElement({ cssSelector: SELECTORS.PROFILE_AVATAR })
     await sleep(100)
-    await moveCursor({ ...(await getCoords({ cssSelector: SELECTORS.PROFILE_AVATAR }))!, straight: true })
+    await moveCursor((await getCoords({ cssSelector: SELECTORS.PROFILE_AVATAR }))!)
 
-    await moveCursorToElementAndClick({ cssSelector: SELECTORS.PROFILE_AVATAR_DROPDOWN_ITEM })
+    await waitForElement({ cssSelector: SELECTORS.PROFILE_AVATAR_DROPDOWN_ITEM })
+    await sleep(500)
+    await moveCursor({ ...(await getCoords({ cssSelector: SELECTORS.PROFILE_AVATAR_DROPDOWN_ITEM }))!, straight: true })
+    await click()
 
     const subscriptionMetadata = (await execJS({
       code: "document.querySelector('[data-testid=section-card-accountsubscriptions] div.metadata')?.textContent",
