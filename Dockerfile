@@ -6,6 +6,7 @@ COPY ./pilot /pilot/
 
 
 FROM kasmweb/chrome:1.11.0
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "curl http://localhost:3000" ]
 ENV APP_ARGS '--remote-debugging-port=16666 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble --disable-features=Translate'
 USER root
 
