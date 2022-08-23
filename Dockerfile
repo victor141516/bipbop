@@ -1,11 +1,11 @@
 FROM node:18.7.0 as builder
 WORKDIR /build
-COPY ./package.json ./package-lock.json /build/
+COPY ./package.json ./package-lock.json ./
 RUN npm i
-COPY ./src /build/
+COPY . .
 RUN npm run build && \
-  cp ./package.json ./package-lock.json /dist && \
-  cd /dist && \
+  cp ./package.json ./package-lock.json ./dist && \
+  cd ./dist && \
   npm install --omit=dev
 
 
