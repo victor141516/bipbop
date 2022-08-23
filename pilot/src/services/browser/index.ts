@@ -277,11 +277,11 @@ export class Browser {
     const desiredScrollPos = viewportHeight / 2 - elHeight * 1.5
     let diff = scrollPos - desiredScrollPos
     let lastDiff = Infinity
-    console.log(1, { diff })
+    console.log(1, { diff, lastDiff })
     const isInRange = () => Math.abs(lastDiff) < Math.abs(diff) || lastDiff === diff
 
     while (!isInRange()) {
-      console.log(2, { diff })
+      console.log(2, { diff, lastDiff })
       await sleep(10 + 30 * Math.random())
       if (diff > 0) await mouse.scrollDown(1)
       else await mouse.scrollUp(1)
