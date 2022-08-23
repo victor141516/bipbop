@@ -1,8 +1,8 @@
-FROM node:18.7.0 as pilot-builder
-WORKDIR /pilot
-COPY ./pilot/package.json ./pilot/package-lock.json /pilot/
+FROM node:18.7.0 as builder
+WORKDIR /src
+COPY ./src/package.json ./src/package-lock.json /build/
 RUN npm i
-COPY ./pilot /pilot/
+COPY ./src /build/
 
 
 FROM kasmweb/chrome:1.11.0
@@ -19,14 +19,14 @@ RUN apt-get update && \
 RUN apt-get update && \
   apt-get install -y libxtst-dev xorg-dev libpng-dev netcat && \
   chown -R 1000:1000 /home/kasm-user && \
-  mkdir -p /pilot && \
+  mkdir -p /app && \
   mkdir -p /etc/opt/chrome/policies/managed && \
   echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json && \
   mkdir -p /var/log/chrome && \
   apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
-COPY --from=pilot-builder /pilot/ /pilot/
+COPY --from=builder /build/ /app/
 COPY ./docker/init/ /init/
 
 ENTRYPOINT []
