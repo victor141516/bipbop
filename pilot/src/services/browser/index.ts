@@ -276,8 +276,9 @@ export class Browser {
     await getRemoteData()
     const desiredScrollPos = viewportHeight / 2 - elHeight * 1.5
     let diff = scrollPos - desiredScrollPos
+    let lastDiff = 0
     console.log(1, { diff })
-    const isInRange = () => Math.abs(diff) < viewportHeight * 0.25
+    const isInRange = () => lastDiff < diff
 
     while (!isInRange()) {
       console.log(2, { diff })
@@ -285,6 +286,7 @@ export class Browser {
       if (diff > 0) await mouse.scrollDown(1)
       else await mouse.scrollUp(1)
       await getRemoteData()
+      lastDiff = diff
       diff = scrollPos - desiredScrollPos
     }
   }
