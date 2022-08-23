@@ -23,14 +23,14 @@ RUN apt-get update && \
 RUN apt-get update && \
   apt-get install -y libxtst-dev xorg-dev libpng-dev netcat && \
   chown -R 1000:1000 /home/kasm-user && \
-  mkdir -p /app && \
+  mkdir -p /bipbop && \
   mkdir -p /etc/opt/chrome/policies/managed && \
   echo '{"PasswordManagerEnabled": false}' > /etc/opt/chrome/policies/managed/disable_password_manager.json && \
   mkdir -p /var/log/chrome && \
   apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
-COPY --from=builder /build/dist /app/
+COPY --from=builder /build/dist /bipbop/
 COPY ./docker/init/ /init/
 
 ENTRYPOINT []
