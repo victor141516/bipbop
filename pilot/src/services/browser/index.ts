@@ -267,7 +267,6 @@ export class Browser {
                   return { viewportHeight, scrollPos, elHeight }
                 })()`,
       })) as { viewportHeight: number; scrollPos: number; elHeight: number }
-      console.log(result)
       viewportHeight = result.viewportHeight
       scrollPos = result.scrollPos
       elHeight = result.elHeight
@@ -278,7 +277,6 @@ export class Browser {
     let diff = scrollPos - desiredScrollPos
     let lastDiff = Infinity
     const isInRange = () => {
-      console.log({ diff, lastDiff })
       return Math.abs(lastDiff) <= Math.abs(diff) && Math.abs(diff) < viewportHeight
     }
 
