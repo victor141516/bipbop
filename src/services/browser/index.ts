@@ -24,6 +24,13 @@ export { MouseButton }
 
 keyboard.config.autoDelayMs = 50
 
+interface ElementCoords {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export class Browser {
   private client: Promise<Pick<CDP.Client, 'send' | 'on' | 'close'>>
   private isNavigating = false
@@ -90,20 +97,24 @@ export class Browser {
 
   async getCoords({
     cssSelector,
+    index = 0,
+    all = false,
   }: {
     cssSelector?: string
-  }): Promise<{ x: number; y: number; width: number; height: number } | null> {
+    index?: number
+    all: boolean
+  }): Promise<Array<ElementCoords> | ElementCoords | null> {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
-    const result = await client.send(
+    const elementCoordsExecution = await client.send(
       'Runtime.evaluate',
       {
-        expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
+        expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
       },
       this.activeTab.sessionId,
     )
 
-    const screenPos = await client.send(
+    const screenPosExecution = await client.send(
       'Runtime.evaluate',
       {
         expression:
@@ -112,22 +123,18 @@ export class Browser {
       this.activeTab.sessionId,
     )
 
-    const offset = JSON.parse(screenPos.result.value)
-    let clientRect: null | { x: number; y: number; width: number; height: number } = null
+    const offset = JSON.parse(screenPosExecution.result.value)
+    const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
 
-    try {
-      clientRect = JSON.parse(result.result.value)['0']
-    } catch (err) {
-      return null
-    }
+    const result = elementsRect.map((rect) => ({
+      x: offset.offsetX + rect!.x,
+      y: offset.offsetY + rect!.y,
+      width: rect!.width,
+      height: rect!.height,
+    }))
 
-    const retVal = {
-      x: offset.offsetX + clientRect!.x,
-      y: offset.offsetY + clientRect!.y,
-      width: clientRect!.width,
-      height: clientRect!.height,
-    }
-    return retVal
+    if (all) return result
+    else return result.at(index) ?? null
   }
 
   async getPageSource() {
