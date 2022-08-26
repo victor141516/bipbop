@@ -102,7 +102,7 @@ export class Browser {
   }: {
     cssSelector?: string
     index?: number
-    all: boolean
+    all?: boolean
   }): Promise<Array<ElementCoords> | ElementCoords | null> {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
