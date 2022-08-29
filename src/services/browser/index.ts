@@ -103,6 +103,7 @@ export class Browser {
       root: { nodeId: rootNodeId },
     } = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
     const { nodeIds } = await client.send('DOM.querySelectorAll', { nodeId: rootNodeId, selector: cssSelector })
+    console.log({ nodeIds })
     const allCoords = await Promise.all(
       nodeIds.map(async (nodeId) => {
         const { model } = await client.send('DOM.getBoxModel', { nodeId })
