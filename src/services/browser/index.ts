@@ -99,21 +99,6 @@ export class Browser {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
 
-    // const {
-    //   root: { nodeId: rootNodeId },
-    // } = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
-    // const { node: rootNode } = await client.send('DOM.describeNode', { nodeId: rootNodeId })
-    // const { nodeIds } = await client.send('DOM.querySelectorAll', { nodeId: rootNodeId, selector: cssSelector })
-    // console.log({ nodeIds, rootNodeId, cssSelector, rootNode })
-    // const allCoords = await Promise.all(
-    //   nodeIds.map(async (nodeId) => {
-    //     const { model } = await client.send('DOM.getBoxModel', { nodeId })
-    //     return JSON.stringify(model)
-    //   }),
-    // )
-    // if (all) return allCoords
-    // else return allCoords.at(index) ?? null
-
     const elementCoordsExecution = await client.send(
       'Runtime.evaluate',
       {
