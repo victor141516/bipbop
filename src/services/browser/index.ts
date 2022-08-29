@@ -106,7 +106,7 @@ export class Browser {
     const allCoords = await Promise.all(
       nodeIds.map(async (nodeId) => {
         const { model } = await client.send('DOM.getBoxModel', { nodeId })
-        return model
+        return JSON.stringify(model)
       }),
     )
     if (all) return allCoords
