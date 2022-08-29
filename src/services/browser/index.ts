@@ -95,46 +95,52 @@ export class Browser {
     return client.send('Page.navigate', { url }, this.activeTab.sessionId)
   }
 
-  async getCoords({
-    cssSelector,
-    index = 0,
-    all = false,
-  }: {
-    cssSelector?: string
-    index?: number
-    all?: boolean
-  }): Promise<Array<ElementCoords> | ElementCoords | null> {
+  async getCoords({ cssSelector, index = 0, all = false }: { cssSelector?: string; index?: number; all?: boolean }) {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
-    const elementCoordsExecution = await client.send(
-      'Runtime.evaluate',
-      {
-        expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
-      },
-      this.activeTab.sessionId,
+
+    const {
+      root: { nodeId: rootNodeId },
+    } = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
+    const { nodeIds } = await client.send('DOM.querySelectorAll', { nodeId: rootNodeId, selector: cssSelector })
+    const allCoords = await Promise.all(
+      nodeIds.map(async (nodeId) => {
+        const { model } = await client.send('DOM.getBoxModel', { nodeId })
+        return model
+      }),
     )
+    if (all) return allCoords
+    else return allCoords.at(index) ?? null
 
-    const screenPosExecution = await client.send(
-      'Runtime.evaluate',
-      {
-        expression:
-          'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
-      },
-      this.activeTab.sessionId,
-    )
+    // const elementCoordsExecution = await client.send(
+    //   'Runtime.evaluate',
+    //   {
+    //     expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
+    //   },
+    //   this.activeTab.sessionId,
+    // )
 
-    const offset = JSON.parse(screenPosExecution.result.value)
-    const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
+    // const screenPosExecution = await client.send(
+    //   'Runtime.evaluate',
+    //   {
+    //     expression:
+    //       'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
+    //   },
+    //   this.activeTab.sessionId,
+    // )
 
-    const result = elementsRect.map((rect) => ({
-      x: offset.offsetX + rect!.x,
-      y: offset.offsetY + rect!.y,
-      width: rect!.width,
-      height: rect!.height,
-    }))
+    // const offset = JSON.parse(screenPosExecution.result.value)
+    // const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
 
-    if (all) return result
-    else return result.at(index) ?? null
+    // const result = elementsRect.map((rect) => ({
+    //   x: offset.offsetX + rect!.x,
+    //   y: offset.offsetY + rect!.y,
+    //   width: rect!.width,
+    //   height: rect!.height,
+    // }))
+
+    // if (all) return result
+    // else return result.at(index) ?? null
   }
 
   async getPageSource() {
