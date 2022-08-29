@@ -37,13 +37,13 @@ export class Browser {
   private activeTab = { sessionId: '', targetId: '' }
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
-    const initResult = CDP(cdpOptions).then(async (client) => {
-      const { Runtime, Page, DOM, Target } = client
-      await Promise.all([Runtime.enable(), Page.enable()])
-      return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
+    const clientPromise = CDP(cdpOptions).then(async (client) => {
+      const { Page, DOM } = client
+      await Promise.all([DOM.enable(), Page.enable()])
+      return client
     })
     this.client = new Promise(async (res) => {
-      const client = (await initResult).client
+      const client = await clientPromise
       client.Page.on('frameNavigated', () => (this.isNavigating = false))
       client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
       res(client)
@@ -99,50 +99,50 @@ export class Browser {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
 
-    const {
-      root: { nodeId: rootNodeId },
-    } = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
-    const { node: rootNode } = await client.send('DOM.describeNode', { nodeId: rootNodeId })
-    const { nodeIds } = await client.send('DOM.querySelectorAll', { nodeId: rootNodeId, selector: cssSelector })
-    console.log({ nodeIds, rootNodeId, cssSelector, rootNode })
-    const allCoords = await Promise.all(
-      nodeIds.map(async (nodeId) => {
-        const { model } = await client.send('DOM.getBoxModel', { nodeId })
-        return JSON.stringify(model)
-      }),
+    // const {
+    //   root: { nodeId: rootNodeId },
+    // } = await client.send('DOM.getDocument', { depth: -1 }, this.activeTab.sessionId)
+    // const { node: rootNode } = await client.send('DOM.describeNode', { nodeId: rootNodeId })
+    // const { nodeIds } = await client.send('DOM.querySelectorAll', { nodeId: rootNodeId, selector: cssSelector })
+    // console.log({ nodeIds, rootNodeId, cssSelector, rootNode })
+    // const allCoords = await Promise.all(
+    //   nodeIds.map(async (nodeId) => {
+    //     const { model } = await client.send('DOM.getBoxModel', { nodeId })
+    //     return JSON.stringify(model)
+    //   }),
+    // )
+    // if (all) return allCoords
+    // else return allCoords.at(index) ?? null
+
+    const elementCoordsExecution = await client.send(
+      'Runtime.evaluate',
+      {
+        expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
+      },
+      this.activeTab.sessionId,
     )
-    if (all) return allCoords
-    else return allCoords.at(index) ?? null
 
-    // const elementCoordsExecution = await client.send(
-    //   'Runtime.evaluate',
-    //   {
-    //     expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
-    //   },
-    //   this.activeTab.sessionId,
-    // )
+    const screenPosExecution = await client.send(
+      'Runtime.evaluate',
+      {
+        expression:
+          'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
+      },
+      this.activeTab.sessionId,
+    )
 
-    // const screenPosExecution = await client.send(
-    //   'Runtime.evaluate',
-    //   {
-    //     expression:
-    //       'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
-    //   },
-    //   this.activeTab.sessionId,
-    // )
+    const offset = JSON.parse(screenPosExecution.result.value)
+    const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
 
-    // const offset = JSON.parse(screenPosExecution.result.value)
-    // const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
+    const result = elementsRect.map((rect) => ({
+      x: offset.offsetX + rect!.x,
+      y: offset.offsetY + rect!.y,
+      width: rect!.width,
+      height: rect!.height,
+    }))
 
-    // const result = elementsRect.map((rect) => ({
-    //   x: offset.offsetX + rect!.x,
-    //   y: offset.offsetY + rect!.y,
-    //   width: rect!.width,
-    //   height: rect!.height,
-    // }))
-
-    // if (all) return result
-    // else return result.at(index) ?? null
+    if (all) return result
+    else return result.at(index) ?? null
   }
 
   async getPageSource() {
