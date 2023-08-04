@@ -4,11 +4,11 @@
   "main": "dist/index.js",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.7.0"
   },
   "scripts": {
     "start": "ts-node src/index.ts",
-    "build": "tsc",
+    "build": "tsc && babel dist -d dist",
     "run-compiled": "node",
     "lint": "eslint src/**",
     "lint:tsc": "tsc --noEmit"
@@ -29,6 +29,9 @@
     "ghost-cursor": "^1.1.13"
   },
   "devDependencies": {
+    "@babel/cli": "^7.18.10",
+    "@babel/core": "^7.18.13",
+    "@babel/preset-env": "^7.18.10",
     "@types/chrome-remote-interface": "^0.31.4",
     "@types/eslint": "^8.4.5",
     "@types/eslint-plugin-prettier": "^3.1.0",
@@ -37,6 +40,7 @@
     "@types/prettier": "^2.7.0",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
+    "babel-plugin-module-resolver": "^4.1.0",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^17.0.0",

@@ -24,19 +24,26 @@ export { MouseButton }
 
 keyboard.config.autoDelayMs = 50
 
+interface ElementCoords {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export class Browser {
   private client: Promise<Pick<CDP.Client, 'send' | 'on' | 'close'>>
   private isNavigating = false
   private activeTab = { sessionId: '', targetId: '' }
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
-    const initResult = CDP(cdpOptions).then(async (client) => {
-      const { Runtime, Page, DOM, Target } = client
-      await Promise.all([Runtime.enable(), Page.enable()])
-      return { runtime: Runtime, client, page: Page, dom: DOM, target: Target }
+    const clientPromise = CDP(cdpOptions).then(async (client) => {
+      const { Page, DOM } = client
+      await Promise.all([DOM.enable(), Page.enable()])
+      return client
     })
     this.client = new Promise(async (res) => {
-      const client = (await initResult).client
+      const client = await clientPromise
       client.Page.on('frameNavigated', () => (this.isNavigating = false))
       client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
       res(client)
@@ -88,22 +95,19 @@ export class Browser {
     return client.send('Page.navigate', { url }, this.activeTab.sessionId)
   }
 
-  async getCoords({
-    cssSelector,
-  }: {
-    cssSelector?: string
-  }): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  async getCoords({ cssSelector, index = 0, all = false }: { cssSelector?: string; index?: number; all?: boolean }) {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
     const client = await this.client
-    const result = await client.send(
+
+    const elementCoordsExecution = await client.send(
       'Runtime.evaluate',
       {
-        expression: `var targetCoordEl = document.querySelector('${cssSelector}'); if (targetCoordEl) { JSON.stringify(targetCoordEl.getClientRects()); }`,
+        expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
       },
       this.activeTab.sessionId,
     )
 
-    const screenPos = await client.send(
+    const screenPosExecution = await client.send(
       'Runtime.evaluate',
       {
         expression:
@@ -112,22 +116,18 @@ export class Browser {
       this.activeTab.sessionId,
     )
 
-    const offset = JSON.parse(screenPos.result.value)
-    let clientRect: null | { x: number; y: number; width: number; height: number } = null
+    const offset = JSON.parse(screenPosExecution.result.value)
+    const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
 
-    try {
-      clientRect = JSON.parse(result.result.value)['0']
-    } catch (err) {
-      return null
-    }
+    const result = elementsRect.map((rect) => ({
+      x: offset.offsetX + rect!.x,
+      y: offset.offsetY + rect!.y,
+      width: rect!.width,
+      height: rect!.height,
+    }))
 
-    const retVal = {
-      x: offset.offsetX + clientRect!.x,
-      y: offset.offsetY + clientRect!.y,
-      width: clientRect!.width,
-      height: clientRect!.height,
-    }
-    return retVal
+    if (all) return result
+    else return result.at(index) ?? null
   }
 
   async getPageSource() {
@@ -253,5 +253,52 @@ export class Browser {
         this.activeTab.sessionId,
       )
       .then((r) => r.result.value)
+  }
+
+  async scrollIntoView({ cssSelector }: { cssSelector: string }) {
+    let viewportHeight = 0,
+      scrollPos = 0,
+      elHeight = 0
+    const getRemoteData = async () => {
+      const result = (await this.execJS({
+        code: `(()=>{
+                  const { y: scrollPos, height: elHeight } = document.querySelector('${cssSelector}').getBoundingClientRect();
+                  const viewportHeight = document.documentElement.clientHeight
+                  return { viewportHeight, scrollPos, elHeight }
+                })()`,
+      })) as { viewportHeight: number; scrollPos: number; elHeight: number }
+      viewportHeight = result.viewportHeight
+      scrollPos = result.scrollPos
+      elHeight = result.elHeight
+    }
+
+    await getRemoteData()
+    const desiredScrollPos = viewportHeight / 2 - elHeight * 1.5
+    let diff = scrollPos - desiredScrollPos
+    let lastDiff = Infinity
+    const isInRange = () => {
+      return Math.abs(lastDiff) <= Math.abs(diff) && Math.abs(diff) < viewportHeight
+    }
+
+    while (!isInRange()) {
+      if (diff > 0) await mouse.scrollDown(1)
+      else await mouse.scrollUp(1)
+      await sleep(10 + 30 * Math.random())
+      await getRemoteData()
+      lastDiff = diff
+      diff = scrollPos - desiredScrollPos
+    }
+  }
+
+  async historyBack() {
+    await this.moveCursor({ x: 20, y: 50 })
+    await this.click({})
+    await this.waitForNavigation({})
+  }
+
+  async historyForward() {
+    await this.moveCursor({ x: 60, y: 50 })
+    await this.click({})
+    await this.waitForNavigation({})
   }
 }
