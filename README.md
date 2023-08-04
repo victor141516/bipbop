@@ -44,19 +44,19 @@ So probably I'll remove this `passenger` thing soon, but as I said it's still WI
 
 Build the Docker image:
 ```sh
-docker build -t victor141516/bipbop-pilot .
+docker build -t victor141516/bipbop .
 ```
 
 Run the image:
 ```sh
 docker run \
   --rm -it \
-  --name bipbop-pilot \
+  --name bipbop \
   --shm-size=512m \
   -p 6901:6901 \
   -p 3000:3000 \
   -e VNC_PW=password \
-  victor141516/bipbop-pilot
+  victor141516/bipbop
 ```
 
 Then you can open https://localhost:6901 in your browser. It'll show a big-scary-red screen complaining about certificated. I don't know why you can't just skip that like usual using the _Advanced_ button. You'll have to type `thisisunsafe`. Yeah, just type that while having the browser open and it'll skip the red page.
