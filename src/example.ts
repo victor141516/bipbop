@@ -12,7 +12,7 @@ const apiCall = (endpoint: string, params: unknown = null) => {
     .then((res) => (res.ok ? res.result : Promise.reject(res.error)))
 }
 
-const main = async () => {
+const botTest = async () => {
   await apiCall('navigateTo', { url: 'https://fingerprintjs.github.io/BotD/main/' })
   await apiCall('waitForNavigation')
   await apiCall('waitForElement', { cssSelector: '#detectors' })
@@ -24,6 +24,18 @@ const main = async () => {
   await apiCall('pressKeys', { keys: [Key.LeftControl] })
   await apiCall('pressKeys', { keys: [Key.W] })
   await apiCall('releaseKeys', { keys: [Key.LeftControl, Key.W] })
+}
+
+const recaptchaTest = async () => {
+  await apiCall('navigateTo', { url: 'https://www.google.com/recaptcha/api2/demo' })
+  await apiCall('moveCursor', { x: 67, y: 448 })
+  await apiCall('click')
+  await apiCall('waitForElement', { cssSelector: '.recaptcha-checkbox-checked' })
+}
+
+const main = async () => {
+  botTest()
+  recaptchaTest()
 }
 
 main()
