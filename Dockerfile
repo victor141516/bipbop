@@ -1,12 +1,13 @@
 FROM node:18.7.0 as builder
 WORKDIR /build
 COPY ./package.json ./package-lock.json ./
-RUN npm i
-COPY . .
-RUN npm run build && \
-  cp ./package.json ./package-lock.json ./dist && \
-  cd ./dist && \
+RUN npm i && \
+  mkdir -p ./dist-packages && \
+  cp ./package.json ./package-lock.json ./dist-packages && \
+  cd ./dist-packages && \
   npm install --omit=dev
+COPY . .
+RUN npm run build
 
 
 FROM kasmweb/chrome:1.13.1
@@ -31,6 +32,7 @@ RUN apt-get update && \
 
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
 COPY --from=builder /build/dist /bipbop/
+COPY --from=builder /build/dist-packages /bipbop/
 COPY ./docker/init/ /init/
 
 ENTRYPOINT []
