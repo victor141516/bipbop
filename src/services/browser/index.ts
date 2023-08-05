@@ -1,16 +1,16 @@
-import CDP from 'chrome-remote-interface'
 import {
-  keyboard,
-  mouse,
-  straightTo,
-  randomPointIn,
-  Region,
+  Key,
   Button as MouseButton,
   Point,
-  Key,
+  Region,
   clipboard,
+  keyboard,
+  mouse,
+  randomPointIn,
   sleep,
+  straightTo,
 } from '@nut-tree/nut-js'
+import CDP from 'chrome-remote-interface'
 import { path } from 'ghost-cursor'
 import { setInterval } from 'timers'
 import {
@@ -19,6 +19,7 @@ import {
   TimeoutBrowserError,
   UsingKeyboardWithKeyCodesKeyboardBrowserError,
 } from './errors'
+import * as scripts from './scripts'
 
 export { MouseButton }
 
@@ -102,7 +103,7 @@ export class Browser {
     const elementCoordsExecution = await client.send(
       'Runtime.evaluate',
       {
-        expression: `var elements = Array.from(document.querySelectorAll('${cssSelector}')); { JSON.stringify(elements.map((e) => e.getClientRects()?.['0']).filter((e) => e !== undefined)); }`,
+        expression: scripts.getElementRect(cssSelector),
       },
       this.activeTab.sessionId,
     )
@@ -110,8 +111,7 @@ export class Browser {
     const screenPosExecution = await client.send(
       'Runtime.evaluate',
       {
-        expression:
-          'JSON.stringify({offsetY: window.screen.height - window.innerHeight, offsetX: window.screen.width - window.innerWidth})',
+        expression: scripts.getScreenPosition(),
       },
       this.activeTab.sessionId,
     )
@@ -183,6 +183,14 @@ export class Browser {
 
   async click({ button = MouseButton.LEFT }) {
     return await mouse.click(button)
+  }
+
+  async pressKeys({ keys }: { keys: Key[] }) {
+    return await keyboard.pressKey(...keys)
+  }
+
+  async releaseKeys({ keys }: { keys: Key[] }) {
+    return await keyboard.releaseKey(...keys)
   }
 
   async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
@@ -261,11 +269,7 @@ export class Browser {
       elHeight = 0
     const getRemoteData = async () => {
       const result = (await this.execJS({
-        code: `(()=>{
-                  const { y: scrollPos, height: elHeight } = document.querySelector('${cssSelector}').getBoundingClientRect();
-                  const viewportHeight = document.documentElement.clientHeight
-                  return { viewportHeight, scrollPos, elHeight }
-                })()`,
+        code: scripts.getElementPosition(cssSelector),
       })) as { viewportHeight: number; scrollPos: number; elHeight: number }
       viewportHeight = result.viewportHeight
       scrollPos = result.scrollPos

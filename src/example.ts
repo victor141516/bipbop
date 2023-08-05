@@ -1,3 +1,5 @@
+import { Key } from '@nut-tree/nut-js'
+
 const apiCall = (endpoint: string, params: unknown = null) => {
   let body = undefined
   if (params) body = JSON.stringify(params)
@@ -11,14 +13,17 @@ const apiCall = (endpoint: string, params: unknown = null) => {
 }
 
 const main = async () => {
-  await apiCall('navigateTo', { url: 'https://fingerprint.com/products/bot-detection/' })
+  await apiCall('navigateTo', { url: 'https://fingerprintjs.github.io/BotD/main/' })
   await apiCall('waitForNavigation')
-  await apiCall('waitForElement', { cssSelector: '[class*="HeroSection-module--botD-"]' })
-  await new Promise((r) => setTimeout(r, 5000))
-  const a = await apiCall('execJS', {
-    code: `document.querySelector('[class*="HeroSection-module--botD-"]').innerText`,
+  await apiCall('waitForElement', { cssSelector: '#detectors' })
+  await new Promise((r) => setTimeout(r, 500))
+  const result = await apiCall('execJS', {
+    code: `document.querySelector('#result-text').innerText`,
   })
-  console.log(a)
+  console.log(result)
+  await apiCall('pressKeys', { keys: [Key.LeftControl] })
+  await apiCall('pressKeys', { keys: [Key.W] })
+  await apiCall('releaseKeys', { keys: [Key.LeftControl, Key.W] })
 }
 
 main()
