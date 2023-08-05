@@ -38,21 +38,30 @@ export class Browser {
   private activeTab = { sessionId: '', targetId: '' }
 
   constructor(cdpOptions: CDP.Options = { host: '127.0.0.1', port: 16666 }) {
-    const clientPromise = CDP(cdpOptions).then(async (client) => {
-      const { Page, DOM } = client
-      await Promise.all([DOM.enable(), Page.enable()])
-      return client
-    })
-    this.client = new Promise(async (res) => {
-      const client = await clientPromise
-      client.Page.on('frameNavigated', () => (this.isNavigating = false))
-      client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
-      res(client)
-    })
+    this.client = this.#initializeClient(cdpOptions)
   }
 
-  async close() {
-    return (await this.client).close()
+  #initializeClient(cdpOptions: CDP.Options) {
+    return CDP(cdpOptions)
+      .then(async (client) => {
+        const { Page, DOM } = client
+        client.on('error', (err) => {
+          console.error('CDP error event:', err)
+        })
+        await Promise.all([DOM.enable(), Page.enable()])
+        client.Page.on('frameNavigated', () => (this.isNavigating = false))
+        client.Page.on('frameRequestedNavigation', () => (this.isNavigating = true))
+        client.on('disconnect', async () => {
+          console.log('CDP client disconnected')
+          await sleep(250)
+          this.client = this.#initializeClient(cdpOptions)
+        })
+        return client
+      })
+      .catch((err) => {
+        console.error('CDP client error:', err)
+        throw err
+      })
   }
 
   async waitForNavigation({ timeout = 30000 }) {
