@@ -1,5 +1,7 @@
-FROM node:18.7.0 as builder
+FROM node:18.17.0 as builder
 WORKDIR /build
+RUN apt-get update && \
+  apt-get install -y libopencv-dev
 COPY ./package.json ./package-lock.json ./
 RUN npm i && \
   mkdir -p ./dist-packages && \
@@ -16,9 +18,9 @@ ENV APP_ARGS '--remote-debugging-port=16666 --start-maximized --disable-notifica
 USER root
 
 RUN apt-get update && \
-  apt-get install -y nodejs npm && \
+  apt-get install -y nodejs npm libopencv-dev && \
   npm install -g n && \
-  n 18.7.0 && \
+  n 18.17.0 && \
   apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 RUN apt-get update && \
@@ -34,6 +36,7 @@ COPY ./docker/supervisor/ /etc/supervisor/conf.d
 COPY --from=builder /build/dist /bipbop/
 COPY --from=builder /build/dist-packages /bipbop/
 COPY ./docker/init/ /init/
+RUN cd /bipbop && npx build-opencv --incDir /usr/include/opencv4/ --libDir /lib/x86_64-linux-gnu/ --binDir=/usr/bin/ --nobuild rebuild
 
 ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "--nodaemon"]
