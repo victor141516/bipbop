@@ -273,7 +273,8 @@ export class Browser {
     )
 
     const imageCoords = await screen.find(nutImage, { confidence })
-    return imageCoords
+    const { left: x, top: y, width, height } = imageCoords
+    return { x, y, width, height }
   }
 
   async execJS({ code }: { code?: string }) {

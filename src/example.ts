@@ -1,4 +1,6 @@
-import { Key } from '@nut-tree/nut-js'
+import { ColorMode, Image, Key, screen } from '@nut-tree/nut-js'
+import '@nut-tree/template-matcher'
+import jimp from 'jimp'
 
 const apiCall = (endpoint: string, params: unknown = null) => {
   let body = undefined
@@ -33,9 +35,32 @@ const recaptchaTest = async () => {
   await apiCall('waitForElement', { cssSelector: '.recaptcha-checkbox-checked' })
 }
 
+async function findImageCoords({ image: base64Image, confidence }: { image: string; confidence?: number }) {
+  const buffer = new Buffer(base64Image, 'base64')
+  const jimpImage = await jimp.read(buffer)
+  const nutImage = new Image(
+    jimpImage.bitmap.width,
+    jimpImage.bitmap.height,
+    jimpImage.bitmap.data,
+    4,
+    Math.random().toString(),
+    jimpImage.bitmap.data.length / (jimpImage.bitmap.width * jimpImage.bitmap.height),
+    jimpImage.bitmap.data.length / jimpImage.bitmap.height,
+    ColorMode.RGB,
+  )
+
+  const imageCoords = await screen.find(nutImage, { confidence })
+  return imageCoords
+}
+
 const main = async () => {
-  botTest()
-  recaptchaTest()
+  // botTest()
+  // recaptchaTest()
+  console.log(
+    await findImageCoords({
+      image: 'base64',
+    }),
+  )
 }
 
 main()
