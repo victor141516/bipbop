@@ -1,5 +1,5 @@
 import { ColorMode, Image, Key, screen } from '@nut-tree/nut-js'
-import '@nut-tree/template-matcher'
+// import '@nut-tree/template-matcher'
 import jimp from 'jimp'
 
 const apiCall = (endpoint: string, params: unknown = null) => {
@@ -56,11 +56,12 @@ async function findImageCoords({ image: base64Image, confidence }: { image: stri
 const main = async () => {
   // botTest()
   // recaptchaTest()
-  console.log(
-    await findImageCoords({
-      image: 'base64',
-    }),
-  )
+  // console.log(
+  //   await findImageCoords({
+  //     image: 'replace-by-image-base64',
+  //   }),
+  // )
+  apiCall('parseHeapSnapshot', { include: ['availableVideoQualities'] }).then(console.log)
 }
 
 main()

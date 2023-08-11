@@ -24,6 +24,7 @@ import {
   TimeoutBrowserError,
   UsingKeyboardWithKeyCodesKeyboardBrowserError,
 } from './errors'
+import { captureHeapSnapshot, findObjectsWithProperties } from './heap'
 import * as scripts from './scripts'
 
 export { MouseButton }
@@ -337,5 +338,14 @@ export class Browser {
     await this.moveCursor({ x: 60, y: 50 })
     await this.click({})
     await this.waitForNavigation({})
+  }
+
+  async parseHeapSnapshot({ include = [], exclude = [] }: { include?: string[]; exclude?: string[] }) {
+    const client = (await this.client) as CDP.Client
+    const heap = await captureHeapSnapshot(client)
+    const result = findObjectsWithProperties(heap, include, {
+      ignoreProperties: exclude,
+    })
+    return result
   }
 }
