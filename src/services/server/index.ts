@@ -1,6 +1,7 @@
 import express, { Request } from 'express'
 import { Browser } from 'services/browser'
 import { PORT } from 'services/config'
+import { ZodError } from 'zod'
 
 const browser = new Browser()
 const app = express()
@@ -26,7 +27,10 @@ apiV1Router.post('/:method', async (req: Request<{ method: keyof Browser }>, res
       .status(500)
       .json({
         ok: false,
-        error: { type: (error as Error)?.constructor?.name, msg: (error as Error).message },
+        error: {
+          type: (error as Error)?.constructor?.name,
+          msg: error instanceof ZodError ? error : (error as Error).message,
+        },
       })
       .send()
   }
