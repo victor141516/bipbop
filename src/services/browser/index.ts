@@ -85,7 +85,7 @@ export class Browser {
     const client = await this.client
     const newTarget = await client.send('Target.createTarget', { url }, this.activeTab.sessionId)
     await client.send('Target.attachToTarget', newTarget)
-    return newTarget
+    return { targetId: newTarget.targetId }
   }
 
   async getTabs() {
@@ -109,7 +109,8 @@ export class Browser {
   async navigateTo({ url }: { url?: string }) {
     if (!url) throw new MissingParameterBrowserError('url')
     const client = await this.client
-    return client.send('Page.navigate', { url }, this.activeTab.sessionId)
+    const navigationResult = await client.send('Page.navigate', { url }, this.activeTab.sessionId)
+    return { frameId: navigationResult.frameId }
   }
 
   async getCoords({ cssSelector, index = 0, all = false }: { cssSelector?: string; index?: number; all?: boolean }) {
@@ -132,7 +133,10 @@ export class Browser {
       this.activeTab.sessionId,
     )
 
-    const offset = JSON.parse(screenPosExecution.result.value)
+    const offset = JSON.parse(screenPosExecution.result.value) as {
+      offsetX: number
+      offsetY: number
+    }
     const elementsRect: Array<ElementCoords> = JSON.parse(elementCoordsExecution.result.value)
 
     const result = elementsRect.map((rect) => ({
@@ -198,15 +202,15 @@ export class Browser {
   }
 
   async click({ button = MouseButton.LEFT }) {
-    return await mouse.click(button)
+    await mouse.click(button)
   }
 
   async pressKeys({ keys }: { keys: Key[] }) {
-    return await keyboard.pressKey(...keys)
+    await keyboard.pressKey(...keys)
   }
 
   async releaseKeys({ keys }: { keys: Key[] }) {
-    return await keyboard.releaseKey(...keys)
+    await keyboard.releaseKey(...keys)
   }
 
   async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
@@ -224,21 +228,22 @@ export class Browser {
       await sleep(20 + Math.random() * 60)
       await keyboard.releaseKey(Key.LeftControl)
     } else {
-      return await keyboard.type(...text)
+      await keyboard.type(...text)
     }
   }
 
   async waitForElement({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
     if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<Awaited<ReturnType<typeof this.getCoords>>>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
         reject(new TimeoutBrowserError())
       }, timeout)
       const loop = setInterval(async () => {
-        if (null !== (await this.getCoords({ cssSelector }))) {
+        const coords = await this.getCoords({ cssSelector })
+        if (coords !== null) {
           clearInterval(loop)
-          resolve()
+          resolve(coords)
         }
       }, 10)
     })
