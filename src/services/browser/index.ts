@@ -1,8 +1,8 @@
 import {
   ColorMode,
   Image,
-  Key,
-  Button as MouseButton,
+  Key as NutKey,
+  Button as NutMouseButton,
   Point,
   Region,
   clipboard,
@@ -19,16 +19,18 @@ import { path } from 'ghost-cursor'
 import jimp from 'jimp'
 import Tesseract from 'tesseract.js'
 import { setInterval } from 'timers'
-import {
-  MissingParameterBrowserError,
-  MouseBrowserError,
-  TimeoutBrowserError,
-  UsingKeyboardWithKeyCodesKeyboardBrowserError,
-} from './errors'
+import { MouseBrowserError, TimeoutBrowserError, UsingKeyboardWithKeyCodesKeyboardBrowserError } from './errors'
 import { captureHeapSnapshot, findObjectsWithProperties } from './heap'
 import * as scripts from './scripts'
+import * as Types from './types'
 
-export { MouseButton }
+export const MouseButtons = {
+  left: NutMouseButton.LEFT,
+  middle: NutMouseButton.MIDDLE,
+  right: NutMouseButton.RIGHT,
+} as const
+
+export const KeyboardKey = { ...NutKey } as Readonly<Record<keyof typeof NutKey, (typeof NutKey)[keyof typeof NutKey]>>
 
 keyboard.config.autoDelayMs = 50
 
@@ -39,7 +41,32 @@ interface ElementCoords {
   height: number
 }
 
-export class Browser {
+interface BrowserAPI {
+  waitForNavigation: Types.WaitForNavigationFunction
+  newTab: Types.NewTabFunction
+  getTabs: Types.GetTabsFunction
+  getActiveTab: Types.GetActiveTabFunction
+  getPageSource: Types.GetPageSourceFunction
+  historyBack: Types.HistoryBackFunction
+  historyForward: Types.HistoryForwardFunction
+  click: Types.ClickFunction
+  moveToTab: Types.MoveToTabFunction
+  navigateTo: Types.NavigateToFunction
+  getCoords: Types.GetCoordsFunction
+  moveCursor: Types.MoveCursorFunction
+  pressKeys: Types.PressKeysFunction
+  releaseKeys: Types.ReleaseKeysFunction
+  type: Types.TypeFunction
+  waitForElement: Types.WaitForElementFunction
+  waitForElementToNotExist: Types.WaitForElementToNotExistFunction
+  findImageCoords: Types.FindImageCoordsFunction
+  execJS: Types.ExecJSFunction
+  scrollIntoView: Types.ScrollIntoViewFunction
+  parseHeapSnapshot: Types.ParseHeapSnapshotFunction
+  screenOcr: Types.ScreenOcrFunction
+}
+
+export class Browser implements BrowserAPI {
   private client: Promise<Pick<CDP.Client, 'send' | 'on' | 'close'>>
   private isNavigating = false
   private activeTab = { sessionId: '', targetId: '' }
@@ -71,7 +98,9 @@ export class Browser {
       })
   }
 
-  async waitForNavigation({ timeout = 30000 }) {
+  async waitForNavigation(params?: Parameters<Types.WaitForNavigationFunction>[0]) {
+    const { timeout } = Types.waitForNavigationParams.parse(params)
+
     if (!this.isNavigating) return
 
     const client = await this.client
@@ -81,7 +110,8 @@ export class Browser {
     })
   }
 
-  async newTab({ url = '' }) {
+  async newTab(params: Parameters<Types.NewTabFunction>[0]) {
+    const { url } = Types.newTabParams.parse(params)
     const client = await this.client
     const newTarget = await client.send('Target.createTarget', { url }, this.activeTab.sessionId)
     await client.send('Target.attachToTarget', newTarget)
@@ -99,22 +129,25 @@ export class Browser {
     return allTabs.find((tab) => tab.targetId === this.activeTab.targetId)
   }
 
-  async moveToTab({ targetId }: { targetId?: string }) {
-    if (!targetId) throw new MissingParameterBrowserError('targetId')
+  async moveToTab(params?: Parameters<Types.MoveToTabFunction>[0]) {
+    const { targetId } = Types.moveToTabParams.parse(params)
+
     const client = await this.client
     const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true })
     this.activeTab = { sessionId, targetId }
   }
 
-  async navigateTo({ url }: { url?: string }) {
-    if (!url) throw new MissingParameterBrowserError('url')
+  async navigateTo(params?: Parameters<Types.NavigateToFunction>[0]) {
+    const { url } = Types.navigateToParams.parse(params)
+
     const client = await this.client
     const navigationResult = await client.send('Page.navigate', { url }, this.activeTab.sessionId)
     return { frameId: navigationResult.frameId }
   }
 
-  async getCoords({ cssSelector, index = 0, all = false }: { cssSelector?: string; index?: number; all?: boolean }) {
-    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
+  async getCoords(params: Parameters<Types.GetCoordsFunction>[0]) {
+    const { cssSelector, index, all } = Types.getCoordsParams.parse(params)
+
     const client = await this.client
 
     const elementCoordsExecution = await client.send(
@@ -195,46 +228,54 @@ export class Browser {
 
     mouse.config.mouseSpeed = straight ? 1000 : 30
     try {
-      return await mouse.move(stops).then(() => null)
+      await mouse.move(stops)
     } catch (error) {
       throw new MouseBrowserError((error as Error)?.message)
     }
   }
 
-  async click({ button = MouseButton.LEFT }) {
-    await mouse.click(button)
+  async click(params: Parameters<Types.ClickFunction>[0]) {
+    const { button } = Types.clickParams.parse(params)
+    await mouse.click(MouseButtons[button])
   }
 
-  async pressKeys({ keys }: { keys: Key[] }) {
+  async pressKeys({ keys }: { keys: (typeof KeyboardKey)[keyof typeof KeyboardKey][] }) {
     await keyboard.pressKey(...keys)
   }
 
-  async releaseKeys({ keys }: { keys: Key[] }) {
+  async releaseKeys({ keys }: { keys: (typeof KeyboardKey)[keyof typeof KeyboardKey][] }) {
     await keyboard.releaseKey(...keys)
   }
 
-  async type({ text, useClipboard = false }: { text?: string[] | Key[]; useClipboard?: boolean }) {
-    if (!text) throw new MissingParameterBrowserError('text')
+  async type(params?: Parameters<Types.TypeFunction>[0]) {
+    const { text, useClipboard } = Types.typeParams.parse(params)
+
     if (useClipboard) {
-      if (typeof text[0] === 'number') throw new UsingKeyboardWithKeyCodesKeyboardBrowserError(text.toString())
+      if (Types.isNumberArray(text)) throw new UsingKeyboardWithKeyCodesKeyboardBrowserError(text.toString())
       let clipboardText = ''
       clipboardText = Array.isArray(text) ? text.join('') : text
       await clipboard.setContent(clipboardText)
-      await keyboard.pressKey(Key.LeftControl)
+      await keyboard.pressKey(KeyboardKey.LeftControl)
       await sleep(40 + Math.random() * 60)
-      await keyboard.pressKey(Key.V)
+      await keyboard.pressKey(KeyboardKey.V)
       await sleep(10 + Math.random() * 30)
-      await keyboard.releaseKey(Key.V)
+      await keyboard.releaseKey(KeyboardKey.V)
       await sleep(20 + Math.random() * 60)
-      await keyboard.releaseKey(Key.LeftControl)
-    } else {
+      await keyboard.releaseKey(KeyboardKey.LeftControl)
+    } else if (Types.isStringArray(text)) {
       await keyboard.type(...text)
     }
   }
 
-  async waitForElement({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
-    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
-    return new Promise<Awaited<ReturnType<typeof this.getCoords>>>(async (resolve, reject) => {
+  async waitForElement(params?: Parameters<Types.WaitForElementFunction>[0]) {
+    const { cssSelector, timeout } = Types.waitForElementParams.parse(params)
+
+    return new Promise<{
+      x: number
+      y: number
+      width: number
+      height: number
+    }>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
         reject(new TimeoutBrowserError())
@@ -243,14 +284,22 @@ export class Browser {
         const coords = await this.getCoords({ cssSelector })
         if (coords !== null) {
           clearInterval(loop)
-          resolve(coords)
+          resolve(
+            coords as {
+              x: number
+              y: number
+              width: number
+              height: number
+            },
+          )
         }
       }, 10)
     })
   }
 
-  async waitForElementToNotExist({ cssSelector, timeout = 30000 }: { cssSelector?: string; timeout: number }) {
-    if (!cssSelector) throw new MissingParameterBrowserError('cssSelector')
+  async waitForElementToNotExist(params?: Parameters<Types.WaitForElementFunction>[0]) {
+    const { cssSelector, timeout } = Types.waitForElementToNotExistParams.parse(params)
+
     return new Promise<void>(async (resolve, reject) => {
       setTimeout(() => {
         clearInterval(loop)
@@ -265,7 +314,9 @@ export class Browser {
     })
   }
 
-  async findImageCoords({ image: base64Image, confidence }: { image: string; confidence?: number }) {
+  async findImageCoords(params?: Parameters<Types.FindImageCoordsFunction>[0]) {
+    const { image: base64Image, confidence } = Types.findImageCoordsParams.parse(params)
+
     const buffer = new Buffer(base64Image, 'base64')
     const jimpImage = await jimp.read(buffer)
     const nutImage = new Image(
@@ -295,8 +346,9 @@ export class Browser {
     return { x, y, width, height }
   }
 
-  async execJS({ code }: { code?: string }) {
-    if (!code) throw new MissingParameterBrowserError('code')
+  async execJS(params?: Parameters<Types.ExecJSFunction>[0]) {
+    const { code } = Types.execJSParams.parse(params)
+
     const client = await this.client
     return await client
       .send(
@@ -314,7 +366,9 @@ export class Browser {
       .then((r) => r.result.value)
   }
 
-  async scrollIntoView({ cssSelector }: { cssSelector: string }) {
+  async scrollIntoView(params?: Parameters<Types.ScrollIntoViewFunction>[0]) {
+    const { cssSelector } = Types.scrollIntoViewParams.parse(params)
+
     let viewportHeight = 0,
       scrollPos = 0,
       elHeight = 0
@@ -348,16 +402,18 @@ export class Browser {
   async historyBack() {
     await this.moveCursor({ x: 20, y: 50 })
     await this.click({})
-    await this.waitForNavigation({})
+    await this.waitForNavigation()
   }
 
   async historyForward() {
     await this.moveCursor({ x: 60, y: 50 })
     await this.click({})
-    await this.waitForNavigation({})
+    await this.waitForNavigation()
   }
 
-  async parseHeapSnapshot({ include = [], exclude = [] }: { include?: string[]; exclude?: string[] }) {
+  async parseHeapSnapshot(params?: Parameters<Types.ParseHeapSnapshotFunction>[0]) {
+    const { include, exclude } = Types.parseHeapSnapshotParams.parse(params)
+
     const client = (await this.client) as CDP.Client
     const heap = await captureHeapSnapshot(client)
     const result = findObjectsWithProperties(heap, include, {
@@ -366,15 +422,17 @@ export class Browser {
     return result
   }
 
-  async screenOcr({ lang, full = false }: { lang?: string; full?: boolean }) {
-    const a = await new Promise<Buffer>(async (res, rej) => {
+  async screenOcr(params?: Parameters<Types.ScreenOcrFunction>[0]) {
+    const { lang, full } = Types.screenOcrParams.parse(params)
+
+    const screenshot = await new Promise<Buffer>(async (res, rej) => {
       const screenshot = await screen.grab()
       new jimp(screenshot).getBuffer(jimp.MIME_PNG, (err, val) => {
         if (err) rej(err)
         res(val)
       })
     })
-    const result = await Tesseract.recognize(a, lang)
+    const result = await Tesseract.recognize(screenshot, lang)
     if (full) return result
     return result.data.text
   }

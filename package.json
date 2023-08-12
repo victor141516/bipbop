@@ -31,7 +31,8 @@
     "ghost-cursor": "^1.1.18",
     "jimp": "^0.22.10",
     "puppeteer-heap-snapshot": "^0.1.8",
-    "tesseract.js": "^4.1.1"
+    "tesseract.js": "^4.1.1",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.22.9",
