@@ -1,7 +1,7 @@
+import { Key as NutKey, Button as NutMouseButton } from '@nut-tree/nut-js'
 import { findObjectsWithProperties } from 'puppeteer-heap-snapshot'
 import Tesseract from 'tesseract.js'
 import { z } from 'zod'
-import { MouseButtons } from '.'
 
 type BuildFunction<P, R> = (params: P) => Promise<R>
 
@@ -34,12 +34,7 @@ export const moveCursorParams = z.object({
   straight: z.boolean().optional().default(false),
 })
 export const clickParams = z.object({
-  button: z
-    .enum(
-      Object.keys(MouseButtons) as [keyof typeof MouseButtons, keyof typeof MouseButtons, keyof typeof MouseButtons],
-    )
-    .optional()
-    .default('left'),
+  button: z.enum(['left', 'right', 'middle']).optional().default('left'),
 })
 export const pressKeysParams = z.object({
   keys: z.array(z.number()).min(1),
@@ -146,3 +141,11 @@ export const isNumberArray = (value: unknown): value is number[] => {
   }
   return typeof value[0] === 'number'
 }
+
+export const MouseButtons = {
+  left: NutMouseButton.LEFT,
+  middle: NutMouseButton.MIDDLE,
+  right: NutMouseButton.RIGHT,
+} as Readonly<Record<NonNullable<Parameters<ClickFunction>[0]['button']>, NutMouseButton>>
+
+export const KeyboardKey = { ...NutKey } as Readonly<Record<keyof typeof NutKey, (typeof NutKey)[keyof typeof NutKey]>>

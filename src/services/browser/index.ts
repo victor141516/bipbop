@@ -1,8 +1,6 @@
 import {
   ColorMode,
   Image,
-  Key as NutKey,
-  Button as NutMouseButton,
   Point,
   Region,
   clipboard,
@@ -23,14 +21,6 @@ import { MouseBrowserError, TimeoutBrowserError, UsingKeyboardWithKeyCodesKeyboa
 import { captureHeapSnapshot, findObjectsWithProperties } from './heap'
 import * as scripts from './scripts'
 import * as Types from './types'
-
-export const MouseButtons = {
-  left: NutMouseButton.LEFT,
-  middle: NutMouseButton.MIDDLE,
-  right: NutMouseButton.RIGHT,
-} as const
-
-export const KeyboardKey = { ...NutKey } as Readonly<Record<keyof typeof NutKey, (typeof NutKey)[keyof typeof NutKey]>>
 
 keyboard.config.autoDelayMs = 50
 
@@ -236,14 +226,14 @@ export class Browser implements BrowserAPI {
 
   async click(params: Parameters<Types.ClickFunction>[0]) {
     const { button } = Types.clickParams.parse(params)
-    await mouse.click(MouseButtons[button])
+    await mouse.click(Types.MouseButtons[button])
   }
 
-  async pressKeys({ keys }: { keys: (typeof KeyboardKey)[keyof typeof KeyboardKey][] }) {
+  async pressKeys({ keys }: { keys: (typeof Types.KeyboardKey)[keyof typeof Types.KeyboardKey][] }) {
     await keyboard.pressKey(...keys)
   }
 
-  async releaseKeys({ keys }: { keys: (typeof KeyboardKey)[keyof typeof KeyboardKey][] }) {
+  async releaseKeys({ keys }: { keys: (typeof Types.KeyboardKey)[keyof typeof Types.KeyboardKey][] }) {
     await keyboard.releaseKey(...keys)
   }
 
@@ -255,13 +245,13 @@ export class Browser implements BrowserAPI {
       let clipboardText = ''
       clipboardText = Array.isArray(text) ? text.join('') : text
       await clipboard.setContent(clipboardText)
-      await keyboard.pressKey(KeyboardKey.LeftControl)
+      await keyboard.pressKey(Types.KeyboardKey.LeftControl)
       await sleep(40 + Math.random() * 60)
-      await keyboard.pressKey(KeyboardKey.V)
+      await keyboard.pressKey(Types.KeyboardKey.V)
       await sleep(10 + Math.random() * 30)
-      await keyboard.releaseKey(KeyboardKey.V)
+      await keyboard.releaseKey(Types.KeyboardKey.V)
       await sleep(20 + Math.random() * 60)
-      await keyboard.releaseKey(KeyboardKey.LeftControl)
+      await keyboard.releaseKey(Types.KeyboardKey.LeftControl)
     } else if (Types.isStringArray(text)) {
       await keyboard.type(...text)
     }
