@@ -1,4 +1,5 @@
 FROM node:18.17.0 as builder
+ENV PUPPETEER_SKIP_DOWNLOAD=1
 WORKDIR /build
 RUN apt-get update && \
   apt-get install -y libopencv-dev
