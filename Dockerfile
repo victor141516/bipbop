@@ -11,7 +11,6 @@ RUN npm i && \
 COPY . .
 RUN npm run build
 
-
 FROM kasmweb/chrome:1.13.1
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "curl", "http://localhost:3000" ]
 ENV APP_ARGS '--remote-debugging-port=16666 --start-maximized --disable-notifications --password-store=basic --disable-save-password-bubble --disable-features=Translate'
@@ -33,10 +32,10 @@ RUN apt-get update && \
   apt-get clean autoclean && rm -rf /var/lib/{apt,dpkg,cache,log}/
 
 COPY ./docker/supervisor/ /etc/supervisor/conf.d
-COPY --from=builder /build/dist /bipbop/
 COPY --from=builder /build/dist-packages /bipbop/
-COPY ./docker/init/ /init/
 RUN cd /bipbop && npx build-opencv --incDir /usr/include/opencv4/ --libDir /lib/x86_64-linux-gnu/ --binDir=/usr/bin/ --nobuild rebuild
+COPY --from=builder /build/dist /bipbop/
+COPY ./docker/init/ /init/
 
 ENTRYPOINT []
 CMD ["/usr/bin/supervisord", "--nodaemon"]
