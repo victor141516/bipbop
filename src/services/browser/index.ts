@@ -17,6 +17,7 @@ import '@nut-tree/template-matcher'
 import CDP from 'chrome-remote-interface'
 import { path } from 'ghost-cursor'
 import jimp from 'jimp'
+import Tesseract from 'tesseract.js'
 import { setInterval } from 'timers'
 import {
   MissingParameterBrowserError,
@@ -272,9 +273,20 @@ export class Browser {
       jimpImage.bitmap.data.length / jimpImage.bitmap.height,
       ColorMode.RGB,
     )
+    let x = -1,
+      y = -1,
+      width = -1,
+      height = -1
+    try {
+      const imageCoords = await screen.find(nutImage, { confidence })
+      x = imageCoords.left
+      y = imageCoords.top
+      width = imageCoords.width
+      height = imageCoords.height
+    } catch (error) {
+      if (!(error as Error).message.includes('No match')) throw error
+    }
 
-    const imageCoords = await screen.find(nutImage, { confidence })
-    const { left: x, top: y, width, height } = imageCoords
     return { x, y, width, height }
   }
 
@@ -347,5 +359,18 @@ export class Browser {
       ignoreProperties: exclude,
     })
     return result
+  }
+
+  async screenOcr({ lang, full = false }: { lang?: string; full?: boolean }) {
+    const a = await new Promise<Buffer>(async (res, rej) => {
+      const screenshot = await screen.grab()
+      new jimp(screenshot).getBuffer(jimp.MIME_PNG, (err, val) => {
+        if (err) rej(err)
+        res(val)
+      })
+    })
+    const result = await Tesseract.recognize(a, lang)
+    if (full) return result
+    return result.data.text
   }
 }
